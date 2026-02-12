@@ -56,7 +56,7 @@ export const TOUR_DATA = {
                 },
                 {
                     type: 'nav',
-                    position: [50, 0, -500],
+                    position: [400, 0, -500],
                     target: 'room1',
                     title: 'Перейти в первую комнату'
                 },
