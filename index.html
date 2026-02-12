@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <!-- Адаптивный viewport (п.7) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Технопарк 360°</title>
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Import Map для Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "./libs/three/build/three.module.js"
+            }
+        }
+    </script>
+
+    <!-- model-viewer (локально) -->
+    <script type="module" src="./libs/model-viewer.min.js"></script>
+
+    <!-- Главный скрипт -->
+    <script type="module" src="js/app.js"></script>
+</head>
+<body>
+
+    <!-- Бургер-меню -->
+    <div id="room-menu">
+        <button id="burger-btn">☰</button>
+        <div id="room-list"></div>
+    </div>
+
+    <!-- Контейнер 360-панорамы -->
+    <div id="app"></div>
+
+    <!-- Лоадер панорамы (п.2) -->
+    <div id="panorama-loader" class="loader hidden">
+        <div class="spinner"></div>
+        <span>Загрузка панорамы...</span>
+    </div>
+
+    <!-- Модальное окно с model-viewer -->
+    <div class="overlay" id="overlay">
+        <div class="modal" onclick="event.stopPropagation()">
+            <span class="close-btn" id="close-modal">&times;</span>
+            <div class="modal-3d">
+                <!-- Лоадер модели (п.2) -->
+                <div id="model-loader" class="loader" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:10;">
+                    <div class="spinner"></div>
+                    <span>Загрузка модели...</span>
+                </div>
+                <model-viewer 
+                    id="model-viewer"
+                    camera-controls
+                    auto-rotate
+                    ar-status="not-presenting"
+                    loading="eager"
+                    shadow-intensity="1"
+                    environment-image="neutral"
+                ></model-viewer>
+            </div>
+            <div class="modal-info">
+                <h2 id="modal-title">Название</h2>
+                <p id="modal-text">Описание...</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
