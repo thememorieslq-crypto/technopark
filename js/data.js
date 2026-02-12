@@ -8,8 +8,8 @@ export const TOUR_DATA = {
 
     // Категории для группировки в бургер-меню (п.4)
     categories: [
-        { name: '1 этаж', rooms: ['room1', 'room2', 'room3', 'room4'] },
-        { name: '2 этаж', rooms: ['room3'] }
+        { name: '1 этаж', rooms: ['room1', 'room2',] },
+        { name: '2 этаж', rooms: ['room3', 'room4'] }
     ],
 
     rooms: {
@@ -27,8 +27,20 @@ export const TOUR_DATA = {
                     type: 'nav',
                     position: [100, 0, -500],
                     target: 'room2',
-                    title: 'Перейти в коворкинг' // для тултипа
-                }
+                    title: 'Перейти во вторую комнату' // для тултипа
+                },
+                {
+                    type: 'nav',
+                    position: [200, 0, -500],
+                    target: 'room3',
+                    title: 'Перейти в третью комнату' // для тултипа
+                },
+                {
+                    type: 'nav',
+                    position: [300, 0, -500],
+                    target: 'room4',
+                    title: 'Перейти в четвертую комнату' // для тултипа
+                },
             ]
         },
 
@@ -44,10 +56,22 @@ export const TOUR_DATA = {
                 },
                 {
                     type: 'nav',
-                    position: [0, 0, -500],
+                    position: [50, 0, -500],
                     target: 'room1',
-                    title: 'Вернуться в лабораторию'
-                }
+                    title: 'Перейти в первую комнату'
+                },
+                {
+                    type: 'nav',
+                    position: [250, 0, -500],
+                    target: 'room3',
+                    title: 'Перейти в третью комнату'
+                },
+                {
+                    type: 'nav',
+                    position: [450, 0, -500],
+                    target: 'room4',
+                    title: 'Перейти в четвертую комнату'
+                },
             ]
         },
 
@@ -63,16 +87,22 @@ export const TOUR_DATA = {
                 },
                 {
                     type: 'nav',
-                    position: [15, 85, -500],
+                    position: [50, 85, -500],
                     target: 'room2',
-                    title: 'Вернуться в лабораторию'
+                    title: 'Перейти во вторую комнату'
                 },
                 {
                     type: 'nav',
-                    position: [50, 85, -500],
+                    position: [100, 85, -500],
+                    target: 'room1',
+                    title: 'Перейти в первую комнату'
+                },
+                {
+                    type: 'nav',
+                    position: [150, 85, -500],
                     target: 'room4',
-                    title: 'Вернуться в лабораторию'
-                }
+                    title: 'Перейти в четвертую комнату'
+                },
             ]
         },
 
@@ -88,10 +118,22 @@ export const TOUR_DATA = {
                 },
                 {
                     type: 'nav',
-                    position: [10, 52, -500],
+                    position: [100, 52, -500],
                     target: 'room3',
-                    title: 'Вернуться в лабораторию'
-                }
+                    title: 'Перейти в третью комнату'
+                },
+                {
+                    type: 'nav',
+                    position: [200, 52, -500],
+                    target: 'room2',
+                    title: 'Перейти во вторую комнату'
+                },
+                {
+                    type: 'nav',
+                    position: [300, 52, -500],
+                    target: 'room1',
+                    title: 'Перейти в первую комнату'
+                },
             ]
         },
     }

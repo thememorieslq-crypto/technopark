@@ -1,20 +1,23 @@
 // ============================================
-// panorama.js – 360-панорама, кэш, предзагрузка, лоадер
+// panorama.js – 360-панорама с плавным переходом (fade)
 // ============================================
 import * as THREE from 'three';
 import { OrbitControls } from '../libs/three/examples/jsm/controls/OrbitControls.js';
 import { createHotspots } from './hotspots.js';
 import { TOUR_DATA } from './data.js';
 
-// Включаем встроенный кэш текстур Three.js (п.5)
+// Включаем кэш текстур
 THREE.Cache.enabled = true;
 
 let scene, camera, renderer, sphere;
 let controls;
 let currentRoomId = null;
 
-// Кэш для предзагруженных текстур (п.6)
+// Кэш для предзагруженных текстур
 const textureCache = {};
+
+// ===== FADE-ПЕРЕХОД =====
+let fadeOverlay;
 
 export function initPanorama(container) {
     scene = new THREE.Scene();
@@ -28,7 +31,7 @@ export function initPanorama(container) {
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // оптимизация (п.7)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
     controls = new OrbitControls(camera, renderer.domElement);
@@ -36,19 +39,46 @@ export function initPanorama(container) {
     controls.enablePan = false;
     controls.rotateSpeed = 0.8;
 
+    // ===== Создаём слой для затемнения =====
+    fadeOverlay = document.createElement('div');
+    fadeOverlay.id = 'fade-overlay';
+    fadeOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: black;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+        z-index: 1800;
+    `;
+    document.body.appendChild(fadeOverlay);
+
     window.addEventListener('resize', onWindowResize);
     animate();
 }
 
-function onWindowResize() {
-    const container = document.getElementById('app');
-    if (!container || !camera || !renderer) return;
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
+// ===== FADE: затемнение с callback =====
+function fadeOut(callback) {
+    if (!fadeOverlay) {
+        callback();
+        return;
+    }
+    fadeOverlay.style.opacity = '1';
+    setTimeout(() => {
+        callback();
+    }, 500); // длительность анимации
 }
 
-// Предзагрузка соседней панорамы (п.6)
+// ===== FADE: осветление =====
+function fadeIn() {
+    if (!fadeOverlay) return;
+    fadeOverlay.style.opacity = '0';
+}
+
+// ===== Предзагрузка соседней панорамы =====
 function preloadPanorama(roomId) {
     const room = TOUR_DATA.rooms[roomId];
     if (!room || textureCache[roomId]) return;
@@ -59,16 +89,26 @@ function preloadPanorama(roomId) {
     });
 }
 
+// ===== Загрузка комнаты с fade-эффектом =====
 export function loadRoom(roomId) {
+    // Запускаем затемнение и после него загружаем новую панораму
+    fadeOut(() => {
+        _loadRoomInternal(roomId);
+    });
+}
+
+// ===== Внутренняя функция загрузки (без fade) =====
+function _loadRoomInternal(roomId) {
     const roomData = TOUR_DATA.rooms[roomId];
     if (!roomData) {
         console.error(`❌ Комната ${roomId} не найдена`);
+        fadeIn(); // всё равно включаем свет
         return;
     }
 
     currentRoomId = roomId;
 
-    // Показать лоадер панорамы (п.2)
+    // Показать лоадер панорамы
     const loaderEl = document.getElementById('panorama-loader');
     if (loaderEl) loaderEl.classList.remove('hidden');
 
@@ -88,12 +128,15 @@ export function loadRoom(roomId) {
         // Скрыть лоадер
         if (loaderEl) loaderEl.classList.add('hidden');
 
-        // Сохраняем последнюю комнату (опционально)
+        // Включаем свет (убираем затемнение)
+        fadeIn();
+
+        // Сохраняем последнюю комнату
         try {
             localStorage.setItem('lastRoom', roomId);
         } catch (e) {}
 
-        // Предзагружаем комнаты, на которые ведут навигационные метки
+        // Предзагружаем соседние комнаты
         setTimeout(() => {
             roomData.hotspots
                 .filter(h => h.type === 'nav' && h.target)
@@ -109,6 +152,7 @@ export function loadRoom(roomId) {
 
     // Загружаем новую текстуру
     if (TOUR_DATA.testMode) {
+        // Процедурная текстура для теста
         const canvas = document.createElement('canvas');
         canvas.width = 1024;
         canvas.height = 512;
@@ -130,9 +174,18 @@ export function loadRoom(roomId) {
             (err) => {
                 console.error(`Ошибка загрузки панорамы ${roomId}:`, err);
                 if (loaderEl) loaderEl.classList.add('hidden');
+                fadeIn(); // при ошибке тоже включаем свет
             }
         );
     }
+}
+
+function onWindowResize() {
+    const container = document.getElementById('app');
+    if (!container || !camera || !renderer) return;
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
 }
 
 function animate() {

@@ -98,6 +98,12 @@ export function createHotspots(scene, hotspots, camera, renderer) {
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(hotspotObjects);
 
+         if (intersects.length > 0) {
+            renderer.domElement.style.cursor = 'pointer';
+        } else {
+            renderer.domElement.style.cursor = 'default';
+        }
+
         if (tooltipSprite) {
             scene.remove(tooltipSprite);
             tooltipSprite = null;
