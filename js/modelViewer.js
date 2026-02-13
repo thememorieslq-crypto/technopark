@@ -63,31 +63,33 @@ function onWindowResize() {
 }
 
 // Загружает .glb или, в тестовом режиме/при ошибке, создаёт куб
-export function loadModel(url) {
-    // Очистка предыдущей модели
-    while (modelGroup.children.length > 0) {
-        modelGroup.remove(modelGroup.children[0]);
-    }
-
-    // Тестовый режим или отсутствие URL → показываем примитив
-    if (TOUR_DATA.testMode || !url) {
-        createPlaceholderModel();
-        return;
-    }
-
-    const loader = new GLTFLoader();
-    loader.load(
-        url,
-        (gltf) => {
-            modelGroup.add(gltf.scene);
-        },
-        undefined,
-        (error) => {
-            console.error("Ошибка загрузки GLB:", error);
-            createPlaceholderModel(); // запасной вариант
+    export function loadModel(url) {
+        while (modelGroup.children.length > 0) {
+            modelGroup.remove(modelGroup.children[0]);
         }
-    );
-}
+
+        if (TOUR_DATA.testMode || !url) {
+            createPlaceholderModel();
+            return;
+        }
+
+        const loader = new GLTFLoader();
+        
+        // Важно: используем полный путь от корня сервера
+        const fullUrl = url.startsWith('http') ? url : url;
+        
+        loader.load(
+            fullUrl,
+            (gltf) => {
+                modelGroup.add(gltf.scene);
+            },
+            undefined,
+            (error) => {
+                console.error("Ошибка загрузки GLB:", error);
+                createPlaceholderModel();
+            }
+        );
+    }
 
 // Создаёт простой куб для тестового режима
 function createPlaceholderModel() {
