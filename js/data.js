@@ -1,140 +1,151 @@
 // ============================================
-// data.js – конфигурация комнат и меток
+// data.js – конфигурация корпусов, этажей и комнат
 // ============================================
 
 export const TOUR_DATA = {
-    // Режим тестирования (процедурные текстуры, куб вместо .glb)
+    // Режим тестирования
     testMode: false,
 
-    // Категории для группировки в бургер-меню (п.4)
-    categories: [
-        { name: '1 этаж', rooms: ['room1', 'room2',] },
-        { name: '2 этаж', rooms: ['room3', 'room4'] }
-    ],
-
-    rooms: {
-        room1: {
-            panorama: '../assets/panoramas/room1.jpg',
-            hotspots: [
+    // Корпуса
+    buildings: [
+        {
+            // 1 корпус 
+            id: 'building1',
+            name: '1 Корпус',
+            floors: [
                 {
-                    type: "info",
-                    position: [0, 0, -500],     // на поверхности сферы
-                    model: "../assets/models/microscope.glb",
-                    title: "Микроскоп",
-                    description: "Микроскоп — это оптический прибор, использующий систему линз для получения увеличенных изображений объектов, невидимых невооруженным глазом (бактерий, клеток, микроструктур материалов). Он состоит из механической части (штатив, предметный столик), оптической системы (окуляр, объектив) и осветителя. Основные виды включают световые (для прозрачных образцов) и электронные (для сверхвысокого увеличения). "
+                    // 1 этаж 
+                    id: 'floor1_1',
+                    name: '1 этаж',
+                    rooms: [
+                        {
+                            id: 'room101-1',
+                            name: '101',
+                            panorama: '../assets/panoramas/first/101.jpg',
+                            hotspots: [
+                                {
+                                    type: 'info',
+                                    position: [0, 0, -500],
+                                    model: '../assets/models/microscope.glb',
+                                    title: 'Микроскоп',
+                                    description: 'Описание микроскопа...'
+                                }
+                            ]
+                        },
+                        {
+                            id: 'room102-1',
+                            name: '102',
+                            panorama: '../assets/panoramas/first/102.jpg',
+                            hotspots: [
+                                {
+                                    type: 'info',
+                                    position: [150, -100, -400],
+                                    model: '../assets/models/helmet.glb',
+                                    title: 'Шлем',
+                                    description: 'Описание шлема...'
+                                }
+                            ]
+                        }
+                    ]
                 },
                 {
-                    type: 'nav',
-                    position: [100, 0, -500],
-                    target: 'room2',
-                    title: 'Перейти во вторую комнату' // для тултипа
-                },
-                {
-                    type: 'nav',
-                    position: [200, 0, -500],
-                    target: 'room3',
-                    title: 'Перейти в третью комнату' // для тултипа
-                },
-                {
-                    type: 'nav',
-                    position: [300, 0, -500],
-                    target: 'room4',
-                    title: 'Перейти в четвертую комнату' // для тултипа
-                },
+                    // 2 этаж 
+                    id: 'floor1_2',
+                    name: '2 этаж',
+                    rooms: [
+                        {
+                            id: 'room201-1',
+                            name: '201',
+                            panorama: '../assets/panoramas/first/101.jpg',
+                            hotspots: [
+                                {
+                                    type: 'info',
+                                    position: [350, -100, -400],
+                                    model: '../assets/models/tank.glb',
+                                    title: 'Танк',
+                                    description: 'Описание танка...'
+                                }
+                            ]
+                        }
+                    ]
+                }
             ]
         },
-
-        room2: {
-            panorama: '../assets/panoramas/room2.jpg',
-            hotspots: [
+        {
+            // 3 корпус 
+            id: 'building3',
+            name: '3 Корпус',
+            floors: [
                 {
-                    type: "info",
-                    position: [150, -100, -400],     // на поверхности сферы
-                    model: "../assets/models/helmet.glb",
-                    title: "Шлем",
-                    description: "Шлем — это персональное защитное снаряжение, предназначенное для защиты головы от ударов, проникающих ранений и сотрясений мозга, используемое в спорте, военной сфере и индустрии. Современные шлемы производятся из прочных материалов (поликарбонат, карбон, металл) и часто оснащаются системами вентиляции, шумоизоляции и защиты от ротационных нагрузок, например, MIPS. "
+                    // 1 этаж 
+                    id: 'floor3_1',
+                    name: 'Технопарк',
+                    rooms: [
+                        {
+                            id: 'room112-3',
+                            name: '112',
+                            panorama: '../assets/panoramas/third/112.jpg',
+                            hotspots: [
+                                {
+                                    type: 'info',
+                                    position: [250, -100, -400],
+                                    model: '../assets/models/taxi.glb',
+                                    title: 'Такси',
+                                    description: 'Описание такси...'
+                                }
+                            ]
+                        },
+                        {
+                            id: 'room107-3',
+                            name: '107',
+                            panorama: '../assets/panoramas/third/107.jpg',
+                            hotspots: []
+                        }
+                    ]
                 },
                 {
-                    type: 'nav',
-                    position: [400, 0, -500],
-                    target: 'room1',
-                    title: 'Перейти в первую комнату'
-                },
-                {
-                    type: 'nav',
-                    position: [250, 0, -500],
-                    target: 'room3',
-                    title: 'Перейти в третью комнату'
-                },
-                {
-                    type: 'nav',
-                    position: [450, 0, -500],
-                    target: 'room4',
-                    title: 'Перейти в четвертую комнату'
-                },
+                    // 2 этаж 
+                    id: 'floor3_2',
+                    name: 'Кванториум',
+                    rooms: [
+                        {
+                            id: 'room209-3',
+                            name: '209',
+                            panorama: '../assets/panoramas/209.jpg',
+                            hotspots: [
+                                {
+                                    type: 'info',
+                                    position: [250, -100, -400],
+                                    model: '../assets/models/taxi.glb',
+                                    title: 'Такси',
+                                    description: 'Описание такси...'
+                                }
+                            ]
+                        },
+                        {
+                            id: 'room212-3',
+                            name: '212',
+                            panorama: '../assets/panoramas/212.jpg',
+                            hotspots: []
+                        }
+                    ]
+                }
             ]
-        },
-
-        room3: {
-            panorama: '../assets/panoramas/room3.jpg',
-            hotspots: [
-                {
-                    type: "info",
-                    position: [350, -100, -400],     // на поверхности сферы
-                    model: "../assets/models/tank.glb",
-                    title: "Танк",
-                    description: "Танк — это бронированная боевая машина, как правило, на гусеничном ходу, сочетающая высокую огневую мощь, защиту и подвижность. Предназначен для прямого поражения целей пушечным или пулемётным вооружением во вращающейся башне. Современные танки — это гусеничные машины массой в десятки тонн с мощным бронированием, способные действовать в различных условиях. "
-                },
-                {
-                    type: 'nav',
-                    position: [50, 85, -500],
-                    target: 'room2',
-                    title: 'Перейти во вторую комнату'
-                },
-                {
-                    type: 'nav',
-                    position: [100, 85, -500],
-                    target: 'room1',
-                    title: 'Перейти в первую комнату'
-                },
-                {
-                    type: 'nav',
-                    position: [150, 85, -500],
-                    target: 'room4',
-                    title: 'Перейти в четвертую комнату'
-                },
-            ]
-        },
-
-        room4: {
-            panorama: '../assets/panoramas/room4.jpg',
-            hotspots: [
-                {
-                    type: "info",
-                    position: [250, -100, -400],     // на поверхности сферы
-                    model: "../assets/models/taxi.glb",
-                    title: "Такси",
-                    description: "Такси — это легковой автомобиль, предназначенный для перевозки пассажиров и багажа, с оплатой по счетчику (таксометру) или фиксированному тарифу. Оно работает по принципу общественного транспорта, доставляя клиента от двери до двери. Современное такси предлагает различные классы обслуживания — от «Эконома» до «VIP/Platinum», обеспечивая комфорт, скорость и безопасность поездки. "
-                },
-                {
-                    type: 'nav',
-                    position: [100, 52, -500],
-                    target: 'room3',
-                    title: 'Перейти в третью комнату'
-                },
-                {
-                    type: 'nav',
-                    position: [200, 52, -500],
-                    target: 'room2',
-                    title: 'Перейти во вторую комнату'
-                },
-                {
-                    type: 'nav',
-                    position: [300, 52, -500],
-                    target: 'room1',
-                    title: 'Перейти в первую комнату'
-                },
-            ]
-        },
-    }
+        }
+    ]
 };
+
+
+
+// Создадим индекс комнат для быстрого доступа
+export const ROOMS_INDEX = {};
+
+(function buildIndex() {
+    for (const building of TOUR_DATA.buildings) {
+        for (const floor of building.floors) {
+            for (const room of floor.rooms) {
+                ROOMS_INDEX[room.id] = room;
+            }
+        }
+    }
+})();

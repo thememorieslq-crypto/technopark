@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from '../libs/three/examples/jsm/controls/OrbitControls.js';
 import { createHotspots } from './hotspots.js';
 import { TOUR_DATA } from './data.js';
-
+import { ROOMS_INDEX } from './data.js';
 // Включаем кэш текстур
 THREE.Cache.enabled = true;
 
@@ -80,7 +80,7 @@ function fadeIn() {
 
 // ===== Предзагрузка соседней панорамы =====
 function preloadPanorama(roomId) {
-    const room = TOUR_DATA.rooms[roomId];
+    const room = ROOMS_INDEX[roomId];
     if (!room || textureCache[roomId]) return;
     const loader = new THREE.TextureLoader();
     loader.load(room.panorama, (tex) => {
@@ -99,7 +99,7 @@ export function loadRoom(roomId) {
 
 // ===== Внутренняя функция загрузки (без fade) =====
 function _loadRoomInternal(roomId) {
-    const roomData = TOUR_DATA.rooms[roomId];
+    const roomData = ROOMS_INDEX[roomId];
     if (!roomData) {
         console.error(`❌ Комната ${roomId} не найдена`);
         fadeIn(); // всё равно включаем свет

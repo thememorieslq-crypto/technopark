@@ -241,3 +241,76 @@ canvas {
         min-width: 150px;
     }
 }
+
+/* ========== Иерархическое меню ========== */
+.menu-building {
+    border-bottom: 1px solid #444;
+}
+
+.building-header {
+    padding: 10px 12px;
+    background: #2a2a2a;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.building-header .toggle {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.floors-container {
+    padding-left: 0;
+}
+
+.menu-floor {
+    border-top: 1px solid #3a3a3a;
+}
+
+.floor-header {
+    padding: 8px 12px 8px 24px;
+    background: #222;
+    color: #ddd;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.floor-header .toggle {
+    font-size: 10px;
+    color: #888;
+}
+
+.rooms-container {
+    padding-left: 36px;
+    background: #1a1a1a;
+}
+
+.room-button {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    color: #fff;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.room-button:hover {
+    background: #444;
+}
+
+/* Скрытие/показ */
+.floors-container,
+.rooms-container {
+    transition: display 0.2s;
+}
