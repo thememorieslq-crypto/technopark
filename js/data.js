@@ -9,14 +9,14 @@ export const TOUR_DATA = {
     // Корпуса
     buildings: [
         {
-            // 1 корпус 
-            id: 'building1',
-            name: '1 Корпус',
+            // Центр Кванториума
+            id: 'quantorium',
+            name: 'Кванториум',
             floors: [
                 {
-                    // 1 этаж 
-                    id: 'floor1_1',
-                    name: '1 этаж',
+                    // 1 Корпус
+                    id: 'frame1',
+                    name: '1 - Корпус',
                     rooms: [
                         {
                             id: 'room101-1',
@@ -49,9 +49,9 @@ export const TOUR_DATA = {
                     ]
                 },
                 {
-                    // 2 этаж 
-                    id: 'floor1_2',
-                    name: '2 этаж',
+                    // 4 Корпус
+                    id: 'frame4',
+                    name: '4 - Корпус',
                     rooms: [
                         {
                             id: 'room201-1',
@@ -72,14 +72,14 @@ export const TOUR_DATA = {
             ]
         },
         {
-            // 3 корпус 
-            id: 'building3',
-            name: '3 Корпус',
+            // Центр Технопарк
+            id: 'technopark',
+            name: 'Технопарк',
             floors: [
                 {
-                    // 1 этаж 
-                    id: 'floor3_1',
-                    name: 'Технопарк',
+                    // 3 Корпус
+                    id: 'frame3',
+                    name: '3 - Корпус',
                     rooms: [
                         {
                             id: 'room112-3',
@@ -99,19 +99,6 @@ export const TOUR_DATA = {
                             id: 'room107-3',
                             name: '107',
                             panorama: '../assets/panoramas/third/107.jpg',
-                            hotspots: []
-                        }
-                    ]
-                },
-                {
-                    // 2 этаж 
-                    id: 'floor3_2',
-                    name: 'Кванториум',
-                    rooms: [
-                        {
-                            id: 'room209-3',
-                            name: '209',
-                            panorama: '../assets/panoramas/209.jpg',
                             hotspots: [
                                 {
                                     type: 'info',
@@ -121,15 +108,9 @@ export const TOUR_DATA = {
                                     description: 'Описание такси...'
                                 }
                             ]
-                        },
-                        {
-                            id: 'room212-3',
-                            name: '212',
-                            panorama: '../assets/panoramas/212.jpg',
-                            hotspots: []
                         }
                     ]
-                }
+                },
             ]
         }
     ]
