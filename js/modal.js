@@ -1,62 +1,133 @@
-// ============================================
-// modal.js – управление модальным окном через <model-viewer>
-// ============================================
 import { TOUR_DATA } from "./data.js";
 
-let overlay, modelViewer, modalTitle, modalText;
+let overlay, modelViewer, modalTitle, modalText, modelLoader;
+let currentItems = [];
+let currentIndex = 0;
 
 export function initModal() {
     overlay = document.getElementById("overlay");
     modelViewer = document.getElementById("model-viewer");
     modalTitle = document.getElementById("modal-title");
     modalText = document.getElementById("modal-text");
+    modelLoader = document.getElementById('model-loader');
 
-    // Закрытие по крестику
-    document.getElementById("close-modal").onclick = closeModal;
+    const closeBtn = document.getElementById("close-modal");
+    if (closeBtn) closeBtn.onclick = closeModal;
 
-    // Закрытие по клику на overlay (фон)
-    overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) closeModal();
+    // Добавляем кнопки управления (если их еще нет в HTML)
+    if (!document.getElementById("prev-model")) {
+        const modal3d = document.querySelector('.modal-3d');
+        modal3d.insertAdjacentHTML('beforeend', `
+            <button class="nav-btn" id="prev-model">❮</button>
+            <button class="nav-btn" id="next-model">❯</button>
+            <div id="models-list-overlay"></div>
+        `);
+
+        const modalInfo = document.querySelector('.modal-info');
+        modalInfo.insertAdjacentHTML('beforeend', `
+            <button id="show-all-btn">Весь список предметов</button>
+        `);
+    }
+
+    // Слушатели кнопок
+    document.getElementById("prev-model").onclick = (e) => { e.stopPropagation(); switchModel(-1); };
+    document.getElementById("next-model").onclick = (e) => { e.stopPropagation(); switchModel(1); };
+    document.getElementById("show-all-btn").onclick = (e) => {
+        e.stopPropagation();
+        document.getElementById("models-list-overlay").classList.toggle('active');
+    };
+
+    // Закрытие по ESC
+    window.addEventListener('keydown', (e) => {
+        if (e.key === "Escape") closeModal();
     });
 
-    // Сброс модели при закрытии (чтобы не мигала старая)
-    window.closeModal = closeModal; // для onclick в разметке (если нужно)
+    // Закрытие по клику на фон
+    overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
 }
 
-// Открыть модалку с моделью
-export function openModal(data) {
-    // Устанавливаем заголовок и описание
-    modalTitle.innerText = data.title || "Интерактивная модель";
-    modalText.innerText = data.description || "Нет описания";
-
-    // Показываем overlay
-    overlay.style.display = "flex";
-
-    const modelLoader = document.getElementById('model-loader');
-    modelLoader.classList.remove('hidden');
-
-    // Сбрасываем src
-    modelViewer.src = null;
-
-    if (!TOUR_DATA.testMode && data.model) {
-        // Вешаем обработчик загрузки на model-viewer
-        modelViewer.addEventListener('load', function onLoad() {
-            modelLoader.classList.add('hidden');
-            modelViewer.removeEventListener('load', onLoad);
-        }, { once: true });
-
-        setTimeout(() => {
-            modelViewer.src = data.model;
-        }, 50);
+export function openModal(hotspotData, allRoomHotspots = []) {
+    // Безопасная фильтрация: если пришел пустой массив или не массив, создаем список из одной текущей точки
+    if (!Array.isArray(allRoomHotspots) || allRoomHotspots.length === 0) {
+        currentItems = [hotspotData];
     } else {
-        // Тестовый режим — скрываем лоадер сразу
-        modelLoader.classList.add('hidden');
-        modalText.innerText = (TOUR_DATA.testMode ? '[ТЕСТ] ' : '') + (data.description || '');
+        currentItems = allRoomHotspots.filter(h => h.type === 'info');
     }
+    
+    // Ищем индекс текущей модели
+    currentIndex = currentItems.findIndex(item => item.model === hotspotData.model);
+    if (currentIndex === -1) currentIndex = 0;
+
+    renderList();
+    updateModalContent();
+    
+    overlay.style.display = "flex";
 }
 
-// Закрыть модалку
+function updateModalContent() {
+    const data = currentItems[currentIndex];
+    if (!data) return;
+
+    modalTitle.innerText = data.title;
+    modalText.innerText = data.description;
+
+    // Сброс загрузки
+    modelLoader.classList.remove('hidden');
+    
+    // Чтобы избежать бесконечного ожидания, если модель уже в кэше
+    const onModelLoad = () => {
+        modelLoader.classList.add('hidden');
+        modelViewer.removeEventListener('load', onModelLoad);
+    };
+
+    modelViewer.addEventListener('load', onModelLoad);
+    
+    // Если через 5 секунд не загрузилось - убираем лоадер принудительно
+    setTimeout(() => modelLoader.classList.add('hidden'), 5000);
+
+    modelViewer.src = data.model;
+
+    // Подсвечиваем активный элемент в списке
+    renderList();
+}
+
+function switchModel(direction) {
+    currentIndex = (currentIndex + direction + currentItems.length) % currentItems.length;
+    updateModalContent();
+}
+
+function renderList() {
+    const listContainer = document.getElementById("models-list-overlay");
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '<h3>Предметы в этой локации:</h3>';
+    currentItems.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'model-item-link' + (index === currentIndex ? ' active-item' : '');
+        row.innerText = item.title || `Предмет ${index + 1}`;
+        row.onclick = (e) => {
+            e.stopPropagation();
+            currentIndex = index;
+            updateModalContent();
+            listContainer.classList.remove('active');
+        };
+        listContainer.appendChild(row);
+    });
+}
+
 export function closeModal() {
     overlay.style.display = "none";
-    modelViewer.src = null; // освобождаем ресурсы
+    // modelViewer.src = ""; 
+    document.getElementById("models-list-overlay").classList.remove('active');
+}
+
+export function preloadRoomModels(hotspots) {
+    hotspots.forEach(hs => {
+        if (hs.model) {
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = hs.model;
+            document.head.appendChild(link);
+        }
+    });
 }

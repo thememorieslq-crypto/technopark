@@ -111,92 +111,82 @@ canvas {
     background: #444;
 }
 
-/* ========== Модальное окно (стили из model-viewer примера) ========== */
+/* ========== Исправленное Модальное окно ========== */
 .overlay {
     display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     background: rgba(0,0,0,0.85);
-    backdrop-filter: blur(8px);
-    z-index: 2000;
+    backdrop-filter: blur(10px);
+    z-index: 3000;
     justify-content: center;
     align-items: center;
 }
+
 .modal {
-    background: white;
-    width: 80%;
-    max-width: 1000px;
-    height: 60vh;
+    background: #fff;
+    width: 95%;
+    max-width: 1200px;
+    height: 80vh;
     display: flex;
     border-radius: 20px;
     position: relative;
-    overflow: hidden;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    overflow: hidden; /* Чтобы видео/модель не вылезали за скругления */
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
 }
+
 .modal-3d {
-    width: 60%;
-    background: #1a1a1a;
+    width: 65%;
+    background: #1a1a1a; /* Темный фон для 3D */
     position: relative;
-}
-#model-viewer {
-    width: 100%;
-    height: 100%;
-    --poster-color: transparent;
-}
-.modal-info {
-    width: 40%;
-    padding: 40px;
-    font-family: sans-serif;
-    background: white;
-    color: #111;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-#modal-title {
-    margin-top: 0;
-    font-size: 28px;
-    color: #222;
-    margin: 0;
-}
-#modal-text {
-    font-size: 16px;
-    line-height: 1.6;
-    color: #444;
-}
-.close-btn {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 32px;
-    font-weight: 300;
-    cursor: pointer;
-    z-index: 10;
-    color: #fff;
-    background: rgba(0,0,0,0.5);
-    width: 40px;
-    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10%;
-    transition: background 0.2s;
 }
-.close-btn:hover {
-    background: rgba(0,0,0,0.8);
+
+/* Убираем белые полосы и рамки у самого компонента */
+#model-viewer {
+    width: 100%;
+    height: 100%;
+    background-color: #1a1a1a;
+    outline: none;
+    --poster-color: transparent; /* Убирает белый фон до загрузки */
 }
-#model-loader {
+
+/* Кнопка закрытия — теперь всегда сверху */
+.close-btn {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.8);
-    border-radius: 10px;
-    padding: 20px;
-    z-index: 10;
+    top: 20px;
+    right: 20px;
+    font-size: 35px;
+    color: #333;
+    cursor: pointer;
+    z-index: 100;
+    line-height: 1;
+    transition: transform 0.2s;
+}
+.close-btn:hover { transform: scale(1.2); color: #000; }
+
+.modal-info {
+    width: 35%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #eee;
+}
+
+/* Индикация переключения */
+.nav-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(5px);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* ========== Адаптивность для мобильных (п.7) ========== */
@@ -312,4 +302,78 @@ canvas {
 .floors-container,
 .rooms-container {
     transition: display 0.2s;
+}
+
+/* Исправление вида model-viewer */
+#model-viewer {
+    width: 100%;
+    height: 100%;
+    background-color: #1a1a1a;
+    outline: none; /* Убирает белую рамку при клике */
+    --poster-color: transparent;
+}
+
+.modal-3d {
+    width: 65%;
+    background: #1a1a1a;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Кнопки навигации */
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 20;
+    font-size: 20px;
+    transition: 0.3s;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.3); }
+#prev-model { left: 20px; }
+#next-model { right: 20px; }
+
+/* Список моделей внутри модалки */
+#models-list-overlay {
+    position: absolute;
+    bottom: -100%;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    z-index: 30;
+    transition: 0.4s ease;
+    padding: 20px;
+    box-sizing: border-box;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+    max-height: 60%;
+    overflow-y: auto;
+}
+#models-list-overlay.active { bottom: 0; }
+
+.model-item-link {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    color: #333;
+}
+.model-item-link:hover { background: #f5f5f5; }
+.active-item { font-weight: bold; color: #2e7d32; border-left: 4px solid #2e7d32; }
+
+#show-all-btn {
+    margin-top: auto;
+    padding: 15px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
 }

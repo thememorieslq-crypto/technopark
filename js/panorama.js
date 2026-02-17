@@ -37,7 +37,7 @@ export function initPanorama(container) {
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableZoom = false;
     controls.enablePan = false;
-    controls.rotateSpeed = 0.8;
+    controls.rotateSpeed = -0.4;
 
     // ===== Создаём слой для затемнения =====
     fadeOverlay = document.createElement('div');

@@ -82,20 +82,6 @@ export const TOUR_DATA = {
                     name: '3 - Корпус',
                     rooms: [
                         {
-                            id: 'room112-3',
-                            name: '112',
-                            panorama: '../assets/panoramas/third/112.jpg',
-                            hotspots: [
-                                {
-                                    type: 'info',
-                                    position: [250, -100, -400],
-                                    model: '../assets/models/taxi.glb',
-                                    title: 'Такси',
-                                    description: 'Описание такси...'
-                                }
-                            ]
-                        },
-                        {
                             id: 'room107-3',
                             name: '107',
                             panorama: '../assets/panoramas/third/107.jpg',
@@ -106,6 +92,34 @@ export const TOUR_DATA = {
                                     model: '../assets/models/taxi.glb',
                                     title: 'Такси',
                                     description: 'Описание такси...'
+                                },
+                                {
+                                    type: 'info',
+                                    position: [150, -100, -400],
+                                    model: '../assets/models/helmet.glb',
+                                    title: 'Шлем',
+                                    description: 'Описание шлема...'
+                                }
+                            ]
+                        },
+                        {
+                            id: 'room112-3',
+                            name: '112',
+                            panorama: '../assets/panoramas/third/112.jpg',
+                            hotspots: [
+                                {
+                                    type: 'info',
+                                    position: [250, -100, -400],
+                                    model: '../assets/models/taxi.glb',
+                                    title: 'Такси',
+                                    description: 'Описание такси...'
+                                },
+                                {
+                                    type: 'info',
+                                    position: [150, -100, -400],
+                                    model: '../assets/models/helmet.glb',
+                                    title: 'Шлем',
+                                    description: 'Описание шлема...'
                                 }
                             ]
                         }

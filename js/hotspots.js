@@ -142,6 +142,7 @@ export function createHotspots(scene, hotspots, camera, renderer) {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
+        
         const intersects = raycaster.intersectObjects(hotspotObjects);
 
         if (intersects.length > 0) {
@@ -149,7 +150,7 @@ export function createHotspots(scene, hotspots, camera, renderer) {
             if (data.type === 'nav') {
                 loadRoom(data.target);
             } else if (data.type === 'info') {
-                openModal(data);
+                openModal(data, hotspots); 
             }
         }
     };
