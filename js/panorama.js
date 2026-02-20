@@ -1,22 +1,17 @@
-// ============================================
-// panorama.js – 360-панорама с плавным переходом (fade)
-// ============================================
 import * as THREE from 'three';
 import { OrbitControls } from '../libs/three/examples/jsm/controls/OrbitControls.js';
 import { createHotspots } from './hotspots.js';
 import { TOUR_DATA } from './data.js';
 import { ROOMS_INDEX } from './data.js';
-// Включаем кэш текстур
+
 THREE.Cache.enabled = true;
 
 let scene, camera, renderer, sphere;
 let controls;
 let currentRoomId = null;
+let currentRoomType = 'room';
 
-// Кэш для предзагруженных текстур
 const textureCache = {};
-
-// ===== FADE-ПЕРЕХОД =====
 let fadeOverlay;
 
 export function initPanorama(container) {
@@ -39,7 +34,6 @@ export function initPanorama(container) {
     controls.enablePan = false;
     controls.rotateSpeed = -0.4;
 
-    // ===== Создаём слой для затемнения =====
     fadeOverlay = document.createElement('div');
     fadeOverlay.id = 'fade-overlay';
     fadeOverlay.style.cssText = `
@@ -60,7 +54,6 @@ export function initPanorama(container) {
     animate();
 }
 
-// ===== FADE: затемнение с callback =====
 function fadeOut(callback) {
     if (!fadeOverlay) {
         callback();
@@ -69,50 +62,55 @@ function fadeOut(callback) {
     fadeOverlay.style.opacity = '1';
     setTimeout(() => {
         callback();
-    }, 500); // длительность анимации
+    }, 500);
 }
 
-// ===== FADE: осветление =====
 function fadeIn() {
     if (!fadeOverlay) return;
     fadeOverlay.style.opacity = '0';
 }
 
-// ===== Предзагрузка соседней панорамы =====
 function preloadPanorama(roomId) {
     const room = ROOMS_INDEX[roomId];
     if (!room || textureCache[roomId]) return;
     const loader = new THREE.TextureLoader();
     loader.load(room.panorama, (tex) => {
         textureCache[roomId] = tex;
-        console.log(`✅ Предзагружена ${roomId}`);
     });
 }
 
-// ===== Загрузка комнаты с fade-эффектом =====
 export function loadRoom(roomId) {
-    // Запускаем затемнение и после него загружаем новую панораму
     fadeOut(() => {
         _loadRoomInternal(roomId);
     });
 }
 
-// ===== Внутренняя функция загрузки (без fade) =====
 function _loadRoomInternal(roomId) {
     const roomData = ROOMS_INDEX[roomId];
     if (!roomData) {
         console.error(`❌ Комната ${roomId} не найдена`);
-        fadeIn(); // всё равно включаем свет
+        fadeIn();
         return;
     }
 
     currentRoomId = roomId;
+    currentRoomType = roomData.type || 'room';
 
-    // Показать лоадер панорамы
+    // Управление кнопкой "Назад" через parentId
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) {
+        if (roomData.parentId) {
+            backBtn.style.display = 'block';
+            // Переназначаем обработчик клика
+            backBtn.onclick = () => loadRoom(roomData.parentId);
+        } else {
+            backBtn.style.display = 'none';
+        }
+    }
+
     const loaderEl = document.getElementById('panorama-loader');
     if (loaderEl) loaderEl.classList.remove('hidden');
 
-    // Удалить старую панораму
     if (sphere) scene.remove(sphere);
 
     const geometry = new THREE.SphereGeometry(500, 64, 64);
@@ -123,20 +121,16 @@ function _loadRoomInternal(roomId) {
         sphere = new THREE.Mesh(geometry, material);
         scene.add(sphere);
 
-        createHotspots(scene, roomData.hotspots, camera, renderer);
+        const filterTypes = currentRoomType === 'zone' ? ['info'] : ['zone'];
+        createHotspots(scene, roomData.hotspots, camera, renderer, filterTypes);
 
-        // Скрыть лоадер
         if (loaderEl) loaderEl.classList.add('hidden');
-
-        // Включаем свет (убираем затемнение)
         fadeIn();
 
-        // Сохраняем последнюю комнату
         try {
             localStorage.setItem('lastRoom', roomId);
         } catch (e) {}
 
-        // Предзагружаем соседние комнаты
         setTimeout(() => {
             roomData.hotspots
                 .filter(h => h.type === 'nav' && h.target)
@@ -144,15 +138,12 @@ function _loadRoomInternal(roomId) {
         }, 200);
     };
 
-    // Используем кэш, если есть
     if (textureCache[roomId]) {
         onTextureReady(textureCache[roomId]);
         return;
     }
 
-    // Загружаем новую текстуру
     if (TOUR_DATA.testMode) {
-        // Процедурная текстура для теста
         const canvas = document.createElement('canvas');
         canvas.width = 1024;
         canvas.height = 512;
@@ -174,7 +165,7 @@ function _loadRoomInternal(roomId) {
             (err) => {
                 console.error(`Ошибка загрузки панорамы ${roomId}:`, err);
                 if (loaderEl) loaderEl.classList.add('hidden');
-                fadeIn(); // при ошибке тоже включаем свет
+                fadeIn();
             }
         );
     }

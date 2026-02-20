@@ -1,16 +1,11 @@
-// ============================================
-// app.js – главный модуль, интерфейс, адаптация
-// ============================================
 import { initPanorama, loadRoom } from './panorama.js';
 import { TOUR_DATA, ROOMS_INDEX } from './data.js';
 import { initModal } from './modal.js';
 
-// ===== Инициализация =====
 initPanorama(document.getElementById('app'));
 initModal();
 
-// Загружаем последнюю посещённую комнату
-let startRoom = 'room101'; // первая комната по умолчанию
+let startRoom = 'room101-1';
 try {
     const saved = localStorage.getItem('lastRoom');
     if (saved && ROOMS_INDEX[saved]) startRoom = saved;
@@ -23,9 +18,8 @@ function initRoomUI() {
     const burger = document.getElementById('burger-btn');
 
     burger.onclick = () => list.classList.toggle('show');
-    list.innerHTML = ''; // очищаем
+    list.innerHTML = '';
 
-    // Строим меню по buildings
     TOUR_DATA.buildings.forEach(building => {
         const buildingDiv = document.createElement('div');
         buildingDiv.className = 'menu-building';
@@ -37,7 +31,7 @@ function initRoomUI() {
 
         const floorsContainer = document.createElement('div');
         floorsContainer.className = 'floors-container';
-        floorsContainer.style.display = 'none'; // свернуто по умолчанию
+        floorsContainer.style.display = 'none';
 
         building.floors.forEach(floor => {
             const floorDiv = document.createElement('div');
@@ -50,23 +44,24 @@ function initRoomUI() {
 
             const roomsContainer = document.createElement('div');
             roomsContainer.className = 'rooms-container';
-            roomsContainer.style.display = 'none'; // свернуто
+            roomsContainer.style.display = 'none';
 
-            floor.rooms.forEach(room => {
-                const roomBtn = document.createElement('button');
-                roomBtn.className = 'room-button';
-                roomBtn.innerHTML = `${room.name}`;
-                roomBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    loadRoom(room.id);
-                    list.classList.remove('show');
-                };
-                roomsContainer.appendChild(roomBtn);
-            });
+            floor.rooms
+                .filter(room => room.type === 'room')
+                .forEach(room => {
+                    const roomBtn = document.createElement('button');
+                    roomBtn.className = 'room-button';
+                    roomBtn.innerHTML = `${room.name}`;
+                    roomBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        loadRoom(room.id);
+                        list.classList.remove('show');
+                    };
+                    roomsContainer.appendChild(roomBtn);
+                });
 
             floorDiv.appendChild(roomsContainer);
 
-            // Клик по заголовку этажа для раскрытия комнат
             floorHeader.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const isHidden = roomsContainer.style.display === 'none';
@@ -80,7 +75,6 @@ function initRoomUI() {
 
         buildingDiv.appendChild(floorsContainer);
 
-        // Клик по заголовку корпуса для раскрытия этажей
         buildingHeader.addEventListener('click', (e) => {
             e.stopPropagation();
             const isHidden = floorsContainer.style.display === 'none';
@@ -95,7 +89,6 @@ function initRoomUI() {
 
 initRoomUI();
 
-// ===== Адаптивность (оставляем как есть) =====
 function setViewportScale() {
     const viewport = document.querySelector('meta[name=viewport]');
     if (!viewport) {

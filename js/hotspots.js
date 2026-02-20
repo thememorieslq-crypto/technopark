@@ -1,5 +1,5 @@
 // ============================================
-// hotspots.js – визуальные метки (спрайты-иконки) и тултипы
+// hotspots.js – визуальные метки (спрайты) с фильтром по типу
 // ============================================
 import * as THREE from 'three';
 import { loadRoom } from './panorama.js';
@@ -10,14 +10,13 @@ const mouse = new THREE.Vector2();
 let hotspotObjects = [];
 let tooltipSprite = null;
 
-// Создание текстуры-иконки (п.1)
+// Создание текстуры-иконки
 function createIconTexture(type) {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
     const ctx = canvas.getContext('2d');
 
-    // Фон: круг с градиентом, полупрозрачный
     const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
     if (type === 'info') {
         gradient.addColorStop(0, 'rgba(76, 175, 80, 0.9)');
@@ -34,7 +33,6 @@ function createIconTexture(type) {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Иконка-символ
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 32px sans-serif';
     ctx.textAlign = 'center';
@@ -48,7 +46,7 @@ function createIconTexture(type) {
     return new THREE.CanvasTexture(canvas);
 }
 
-// Создание текстуры для тултипа (п.3)
+// Создание текстуры для тултипа
 function createTooltipTexture(text) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -64,7 +62,7 @@ function createTooltipTexture(text) {
     return new THREE.CanvasTexture(canvas);
 }
 
-export function createHotspots(scene, hotspots, camera, renderer) {
+export function createHotspots(scene, hotspots, camera, renderer, filterTypes = null) {
     // Удаляем старые метки и тултип
     hotspotObjects.forEach(obj => scene.remove(obj));
     if (tooltipSprite) {
@@ -73,8 +71,13 @@ export function createHotspots(scene, hotspots, camera, renderer) {
     }
     hotspotObjects = [];
 
-    // Создаём новые метки (спрайты)
-    hotspots.forEach(h => {
+    // Фильтруем метки по типам, если задан filterTypes
+    const visibleHotspots = filterTypes
+        ? hotspots.filter(h => filterTypes.includes(h.type))
+        : hotspots;
+
+    // Создаём новые метки
+    visibleHotspots.forEach(h => {
         const texture = createIconTexture(h.type);
         const material = new THREE.SpriteMaterial({
             map: texture,
@@ -91,14 +94,14 @@ export function createHotspots(scene, hotspots, camera, renderer) {
         hotspotObjects.push(sprite);
     });
 
-    // --- Тултипы при наведении (п.3) ---
+    // --- Тултипы при наведении ---
     const onMouseMove = (event) => {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(hotspotObjects);
 
-         if (intersects.length > 0) {
+        if (intersects.length > 0) {
             renderer.domElement.style.cursor = 'pointer';
         } else {
             renderer.domElement.style.cursor = 'default';
@@ -119,7 +122,6 @@ export function createHotspots(scene, hotspots, camera, renderer) {
                 depthWrite: false
             });
             const sprite = new THREE.Sprite(material);
-            // Позиция над меткой
             sprite.position.copy(intersects[0].object.position.clone().add(new THREE.Vector3(0, 35, 0)));
             sprite.scale.set(180, 34, 1);
             scene.add(sprite);
@@ -142,15 +144,15 @@ export function createHotspots(scene, hotspots, camera, renderer) {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
-        
+
         const intersects = raycaster.intersectObjects(hotspotObjects);
 
         if (intersects.length > 0) {
             const data = intersects[0].object.userData;
-            if (data.type === 'nav') {
-                loadRoom(data.target);
+            if (data.type === 'nav' || data.type === 'zone') {
+                loadRoom(data.target);   // переходим к зоне или другой комнате
             } else if (data.type === 'info') {
-                openModal(data, hotspots); 
+                openModal(data, hotspots); // открываем модалку с моделью
             }
         }
     };
