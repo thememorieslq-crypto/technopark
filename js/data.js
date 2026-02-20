@@ -159,7 +159,23 @@ export const TOUR_DATA = {
                                     model: '../assets/models/taxi.glb',
                                     title: 'Такси',
                                     description: 'Описание такси...'
-                                }
+                                },
+
+                                {
+                                    type: 'info',
+                                    position: [150, -100, -400],
+                                    model: '../assets/models/helmet.glb',
+                                    title: 'Такси',
+                                    description: 'Описание такси...'
+                                },
+
+                                {
+                                    type: 'info',
+                                    position: [200, -100, -400],
+                                    model: '../assets/models/tank.glb',
+                                    title: 'Такси',
+                                    description: 'Описание такси...'
+                                },
                             ]
                         },
                         // Зона для шлема (107)

@@ -14,6 +14,10 @@ let currentRoomType = 'room';
 const textureCache = {};
 let fadeOverlay;
 
+// Флаги для предотвращения множественных вызовов
+let isLoading = false;
+let fadeTimer = null;
+
 export function initPanorama(container) {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(
@@ -33,6 +37,13 @@ export function initPanorama(container) {
     controls.enableZoom = false;
     controls.enablePan = false;
     controls.rotateSpeed = -0.4;
+
+    controls.addEventListener('start', () => {
+        document.body.classList.add('is-dragging');
+    });
+    controls.addEventListener('end', () => {
+        document.body.classList.remove('is-dragging');
+    });
 
     fadeOverlay = document.createElement('div');
     fadeOverlay.id = 'fade-overlay';
@@ -60,7 +71,7 @@ function fadeOut(callback) {
         return;
     }
     fadeOverlay.style.opacity = '1';
-    setTimeout(() => {
+    fadeTimer = setTimeout(() => {
         callback();
     }, 500);
 }
@@ -80,8 +91,13 @@ function preloadPanorama(roomId) {
 }
 
 export function loadRoom(roomId) {
+    if (isLoading) return;
+    isLoading = true;
+    if (fadeTimer) clearTimeout(fadeTimer);
+
     fadeOut(() => {
         _loadRoomInternal(roomId);
+        isLoading = false;
     });
 }
 
@@ -101,7 +117,6 @@ function _loadRoomInternal(roomId) {
     if (backBtn) {
         if (roomData.parentId) {
             backBtn.style.display = 'block';
-            // Переназначаем обработчик клика
             backBtn.onclick = () => loadRoom(roomData.parentId);
         } else {
             backBtn.style.display = 'none';

@@ -89,13 +89,4 @@ function initRoomUI() {
 
 initRoomUI();
 
-function setViewportScale() {
-    const viewport = document.querySelector('meta[name=viewport]');
-    if (!viewport) {
-        const meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-        document.head.appendChild(meta);
-    }
-}
-setViewportScale();
+// Мета-тег viewport уже есть в index.html, поэтому функция не нужна.

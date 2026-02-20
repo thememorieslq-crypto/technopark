@@ -1,4 +1,4 @@
-/* ========== Базовые стили (оставляем ваши) ========== */
+/* ========== Базовые стили ========== */
 html, body {
     margin: 0;
     padding: 0;
@@ -16,7 +16,7 @@ canvas {
     display: block;
 }
 
-/* ========== Лоадеры (п.2) ========== */
+/* ========== Лоадер ========== */
 .loader {
     position: fixed;
     top: 0;
@@ -24,6 +24,7 @@ canvas {
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -31,7 +32,6 @@ canvas {
     color: white;
     font-size: 18px;
     z-index: 2000;
-    backdrop-filter: blur(4px);
     transition: opacity 0.2s;
 }
 .loader.hidden {
@@ -51,7 +51,7 @@ canvas {
     100% { transform: rotate(360deg); }
 }
 
-/* ========== Бургер-меню с группировкой (п.4) ========== */
+/* ========== Бургер-меню ========== */
 #room-menu {
     position: fixed;
     top: 20px;
@@ -84,34 +84,63 @@ canvas {
 #room-list.show {
     display: flex;
 }
-.menu-category {
+.menu-building {
     border-bottom: 1px solid #444;
-
 }
-.category-title {
-    display: block;
-    padding: 8px 12px;
-    background: #222;
-    color: #ccc;
-    font-weight: bold;
-}
-#room-list button {
-    background: none;
+.building-header {
+    padding: 10px 12px;
+    background: #2a2a2a;
     color: #fff;
-    /* border: none; */
-
-    padding: 10px 30px ;
-    margin: 5px 5px;
-    text-align: left;
+    font-weight: bold;
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.building-header .toggle {
+    font-size: 12px;
+    color: #aaa;
+}
+.floors-container {
+    padding-left: 0;
+}
+.menu-floor {
+    border-top: 1px solid #3a3a3a;
+}
+.floor-header {
+    padding: 8px 12px 8px 24px;
+    background: #222;
+    color: #ddd;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-size: 14px;
+}
+.floor-header .toggle {
+    font-size: 10px;
+    color: #888;
+}
+.rooms-container {
+    background: #1a1a1a;
+}
+.room-button {
+    display: block;
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    background: none;
+    border: none;
+    color: #fff;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
     transition: background 0.2s;
 }
-#room-list button:hover {
+.room-button:hover {
     background: #444;
 }
 
-/* ========== Исправленное Модальное окно ========== */
+/* ========== Модальное окно ========== */
 .overlay {
     display: none;
     position: fixed;
@@ -123,7 +152,6 @@ canvas {
     justify-content: center;
     align-items: center;
 }
-
 .modal {
     background: #fff;
     width: 95%;
@@ -132,29 +160,32 @@ canvas {
     display: flex;
     border-radius: 20px;
     position: relative;
-    overflow: hidden; /* Чтобы видео/модель не вылезали за скругления */
+    overflow: hidden;
     box-shadow: 0 30px 60px rgba(0,0,0,0.5);
 }
-
 .modal-3d {
     width: 65%;
-    background: #1a1a1a; /* Темный фон для 3D */
+    background: #1a1a1a;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-
-/* Убираем белые полосы и рамки у самого компонента */
 #model-viewer {
     width: 100%;
     height: 100%;
     background-color: #1a1a1a;
     outline: none;
-    --poster-color: transparent; /* Убирает белый фон до загрузки */
+    --poster-color: transparent;
 }
-
-/* Кнопка закрытия — теперь всегда сверху */
+.modal-info {
+    width: 35%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #eee;
+    overflow-y: auto;
+}
 .close-btn {
     position: absolute;
     top: 20px;
@@ -166,51 +197,168 @@ canvas {
     line-height: 1;
     transition: transform 0.2s;
 }
-.close-btn:hover { transform: scale(1.2); color: #000; }
-
-.modal-info {
-    width: 35%;
-    padding: 40px;
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid #eee;
+.close-btn:hover {
+    transform: scale(1.2);
+    color: #000;
 }
 
-/* Индикация переключения */
+/* ========== Навигация по моделям ========== */
 .nav-btn {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    backdrop-filter: blur(5px);
-    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
     width: 50px;
     height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 20;
+    font-size: 20px;
+    transition: 0.3s;
     display: flex;
     align-items: center;
     justify-content: center;
 }
+.nav-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+#prev-model {
+    left: 20px;
+}
+#next-model {
+    right: 20px;
+}
 
-/* ========== Адаптивность для мобильных (п.7) ========== */
-@media (max-width: 768px) {
+/* ========== Выдвижная панель со списком моделей ========== */
+#models-list-overlay {
+    position: absolute;
+    bottom: -100%;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    z-index: 30;
+    transition: bottom 0.4s ease;
+    padding: 20px;
+    box-sizing: border-box;
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+    max-height: 60%;
+    overflow-y: auto;
+}
+#models-list-overlay.active {
+    bottom: 0;
+}
+.model-item-link {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    color: #333;
+}
+.model-item-link:hover {
+    background: #f5f5f5;
+}
+.active-item {
+    font-weight: bold;
+    color: #2e7d32;
+    border-left: 4px solid #2e7d32;
+}
+#show-all-btn {
+    margin-top: auto;
+    padding: 15px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* ========== Второстепенные элементы ========== */
+#back-btn {
+    background: rgba(20,20,20,0.9);
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 25px;
+    transition: background 0.2s;
+}
+#back-btn:hover {
+    background: #333;
+}
+
+/* ========== Курсор при перетаскивании ========== */
+body.is-dragging * {
+    cursor: grabbing !important;
+}
+
+/* ========== Адаптивность ========== */
+@media (max-width: 800px) {
+    .overlay {
+        align-items: flex-end;
+    }
     .modal {
         flex-direction: column;
-        width: 95%;
-        height: 80vh;
-    }
-    .modal-3d, .modal-info {
         width: 100%;
+        height: 80vh;
+        border-radius: 25px 25px 0 0;
+        animation: slideUp 0.3s ease-out;
+        top: auto;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    .modal-3d {
+        width: 100%;
+        height: 55%;
     }
     .modal-info {
-        padding: 20px;
+        width: 100%;
+        height: 45%;
+        padding: 20px 25px;
+        border-left: none;
+        border-top: 1px solid #333;
+        overflow-y: auto;
+    }
+    .close-btn {
+        top: 15px;
+        right: 15px;
+        background: rgba(255,255,255,0.8);
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: #000;
+    }
+}
+
+@media (max-width: 768px) {
+    #room-menu {
+        top: 15px;
+        left: 15px;
     }
     #burger-btn {
         padding: 8px 12px;
         font-size: 18px;
     }
-    #room-list button {
-        font-size: 14px;
-        padding: 8px 12px 8px 28px;
+    #room-list {
+        min-width: 160px;
     }
-    .category-title {
+    .room-button {
+        font-size: 14px;
+        padding: 8px 12px 8px 32px;
+    }
+    .building-header, .floor-header {
+        font-size: 14px;
+    }
+    #back-btn {
+        padding: 8px 12px;
         font-size: 14px;
     }
     .loader span {
@@ -229,173 +377,5 @@ canvas {
     }
     #room-list {
         min-width: 150px;
-    }
-}
-
-/* ========== Иерархическое меню ========== */
-.menu-building {
-    border-bottom: 1px solid #444;
-}
-
-.building-header {
-    padding: 10px 12px;
-    background: #2a2a2a;
-    color: #fff;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.building-header .toggle {
-    font-size: 12px;
-    color: #aaa;
-}
-
-.floors-container {
-    padding-left: 0;
-}
-
-.menu-floor {
-    border-top: 1px solid #3a3a3a;
-}
-
-.floor-header {
-    padding: 8px 12px 8px 24px;
-    background: #222;
-    color: #ddd;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
-}
-
-.floor-header .toggle {
-    font-size: 10px;
-    color: #888;
-}
-
-.rooms-container {
-    background: #1a1a1a;
-}
-
-.room-button {
-    display: block;
-    width: 100%;
-    padding: 8px 12px;
-    background: none;
-    border: none;
-    color: #fff;
-    text-align: left;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.room-button:hover {
-    background: #444;
-}
-
-/* Скрытие/показ */
-.floors-container,
-.rooms-container {
-    transition: display 0.2s;
-}
-
-/* Исправление вида model-viewer */
-#model-viewer {
-    width: 100%;
-    height: 100%;
-    background-color: #1a1a1a;
-    outline: none; /* Убирает белую рамку при клике */
-    --poster-color: transparent;
-}
-
-.modal-3d {
-    width: 65%;
-    background: #1a1a1a;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Кнопки навигации */
-.nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 20;
-    font-size: 20px;
-    transition: 0.3s;
-}
-.nav-btn:hover { background: rgba(255,255,255,0.3); }
-#prev-model { left: 20px; }
-#next-model { right: 20px; }
-
-/* Список моделей внутри модалки */
-#models-list-overlay {
-    position: absolute;
-    bottom: -100%;
-    left: 0;
-    width: 100%;
-    background: #fff;
-    z-index: 30;
-    transition: 0.4s ease;
-    padding: 20px;
-    box-sizing: border-box;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
-    max-height: 60%;
-    overflow-y: auto;
-}
-#models-list-overlay.active { bottom: 0; }
-
-.model-item-link {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-    color: #333;
-}
-.model-item-link:hover { background: #f5f5f5; }
-.active-item { font-weight: bold; color: #2e7d32; border-left: 4px solid #2e7d32; }
-
-#show-all-btn {
-    margin-top: auto;
-    padding: 15px;
-    background: #f0f0f0;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-/* ========== Кнопка "Назад" ========== */
-#back-btn {
-    background: rgba(20,20,20,0.9);
-    color: #fff;
-    border: 1px solid #555;
-    border-radius: 4px;
-    padding: 10px 16px;
-    font-size: 16px;
-    cursor: pointer;
-    margin-top: 25px;
-    transition: background 0.2s;
-}
-#back-btn:hover {
-    background: #333;
-}
-@media (max-width: 768px) {
-    #back-btn {
-        padding: 8px 12px;
-        font-size: 14px;
     }
 }

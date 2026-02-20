@@ -1,6 +1,3 @@
-// ============================================
-// hotspots.js – визуальные метки (спрайты) с фильтром по типу
-// ============================================
 import * as THREE from 'three';
 import { loadRoom } from './panorama.js';
 import { openModal } from './modal.js';
@@ -9,6 +6,11 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let hotspotObjects = [];
 let tooltipSprite = null;
+
+// Ссылки на текущие обработчики для возможности их удаления
+let currentMouseMoveHandler = null;
+let currentMouseLeaveHandler = null;
+let currentClickHandler = null;
 
 // Создание текстуры-иконки
 function createIconTexture(type) {
@@ -71,7 +73,18 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
     }
     hotspotObjects = [];
 
-    // Фильтруем метки по типам, если задан filterTypes
+    // Удаляем предыдущие обработчики событий
+    if (currentMouseMoveHandler) {
+        renderer.domElement.removeEventListener('mousemove', currentMouseMoveHandler);
+    }
+    if (currentMouseLeaveHandler) {
+        renderer.domElement.removeEventListener('mouseleave', currentMouseLeaveHandler);
+    }
+    if (currentClickHandler) {
+        renderer.domElement.removeEventListener('click', currentClickHandler);
+    }
+
+    // Фильтруем метки по типам
     const visibleHotspots = filterTypes
         ? hotspots.filter(h => filterTypes.includes(h.type))
         : hotspots;
@@ -95,7 +108,7 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
     });
 
     // --- Тултипы при наведении ---
-    const onMouseMove = (event) => {
+    currentMouseMoveHandler = (event) => {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
@@ -129,18 +142,14 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
         }
     };
 
-    const onMouseLeave = () => {
+    currentMouseLeaveHandler = () => {
         if (tooltipSprite) {
             scene.remove(tooltipSprite);
             tooltipSprite = null;
         }
     };
 
-    renderer.domElement.addEventListener('mousemove', onMouseMove);
-    renderer.domElement.addEventListener('mouseleave', onMouseLeave);
-
-    // --- Клик по метке ---
-    renderer.domElement.onclick = (event) => {
+    currentClickHandler = (event) => {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
@@ -150,10 +159,14 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
         if (intersects.length > 0) {
             const data = intersects[0].object.userData;
             if (data.type === 'nav' || data.type === 'zone') {
-                loadRoom(data.target);   // переходим к зоне или другой комнате
+                loadRoom(data.target);
             } else if (data.type === 'info') {
-                openModal(data, hotspots); // открываем модалку с моделью
+                openModal(data, hotspots); // передаём все hotspots для списка
             }
         }
     };
+
+    renderer.domElement.addEventListener('mousemove', currentMouseMoveHandler);
+    renderer.domElement.addEventListener('mouseleave', currentMouseLeaveHandler);
+    renderer.domElement.addEventListener('click', currentClickHandler);
 }

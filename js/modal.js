@@ -4,6 +4,9 @@ let overlay, modelViewer, modalTitle, modalText, modelLoader;
 let currentItems = [];
 let currentIndex = 0;
 
+let currentLoadHandler = null;
+let loaderTimeout = null;
+
 export function initModal() {
     overlay = document.getElementById("overlay");
     modelViewer = document.getElementById("model-viewer");
@@ -47,20 +50,19 @@ export function initModal() {
 }
 
 export function openModal(hotspotData, allRoomHotspots = []) {
-    // Безопасная фильтрация: если пришел пустой массив или не массив, создаем список из одной текущей точки
+    // Безопасная фильтрация
     if (!Array.isArray(allRoomHotspots) || allRoomHotspots.length === 0) {
         currentItems = [hotspotData];
     } else {
         currentItems = allRoomHotspots.filter(h => h.type === 'info');
     }
-    
-    // Ищем индекс текущей модели
+
     currentIndex = currentItems.findIndex(item => item.model === hotspotData.model);
     if (currentIndex === -1) currentIndex = 0;
 
     renderList();
     updateModalContent();
-    
+
     overlay.style.display = "flex";
 }
 
@@ -73,17 +75,24 @@ function updateModalContent() {
 
     // Сброс загрузки
     modelLoader.classList.remove('hidden');
-    
-    // Чтобы избежать бесконечного ожидания, если модель уже в кэше
-    const onModelLoad = () => {
-        modelLoader.classList.add('hidden');
-        modelViewer.removeEventListener('load', onModelLoad);
-    };
 
-    modelViewer.addEventListener('load', onModelLoad);
-    
-    // Если через 5 секунд не загрузилось - убираем лоадер принудительно
-    setTimeout(() => modelLoader.classList.add('hidden'), 5000);
+    // Удаляем предыдущий обработчик load
+    if (currentLoadHandler) {
+        modelViewer.removeEventListener('load', currentLoadHandler);
+    }
+
+    // Добавляем новый обработчик (однократный)
+    currentLoadHandler = () => {
+        modelLoader.classList.add('hidden');
+    };
+    modelViewer.addEventListener('load', currentLoadHandler, { once: true });
+
+    // Очищаем предыдущий таймер
+    if (loaderTimeout) clearTimeout(loaderTimeout);
+    // Если модель не загрузилась за 5 секунд – скрываем лоадер принудительно
+    loaderTimeout = setTimeout(() => {
+        modelLoader.classList.add('hidden');
+    }, 5000);
 
     modelViewer.src = data.model;
 
@@ -117,8 +126,8 @@ function renderList() {
 
 export function closeModal() {
     overlay.style.display = "none";
-    // modelViewer.src = ""; 
     document.getElementById("models-list-overlay").classList.remove('active');
+    // Останавливаем загрузку модели, если она идёт? model-viewer сам управляет.
 }
 
 export function preloadRoomModels(hotspots) {
