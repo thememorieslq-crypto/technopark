@@ -9,7 +9,6 @@ export const TOUR_DATA = {
                     id: 'frame1',
                     name: '1 - Корпус',
                     rooms: [
-                        // Основная комната 101
                         {
                             id: 'room101-1',
                             name: '101',
@@ -17,32 +16,23 @@ export const TOUR_DATA = {
                             panorama: '../assets/panoramas/first/101.jpg',
                             hotspots: [
                                 {
-                                    type: 'zone',
-                                    position: [0, 0, -500],
-                                    target: 'zone_microscope_101',
-                                    title: 'Стол с микроскопом'
-                                }
-                            ]
-                        },
-                        // Зона для микроскопа
-                        {
-                            id: 'zone_microscope_101',
-                            name: 'Стол микроскопа',
-                            type: 'zone',
-                            parentId: 'room101-1',       // связь с родительской комнатой
-                            panorama: '../assets/panoramas/first/101.jpg',
-                            hotspots: [
-                                {
-                                    type: 'info',
-                                    position: [150, -100, -400],
-                                    model: '../assets/models/microscope.glb',
-                                    title: 'Микроскоп',
-                                    description: 'Описание микроскопа...'
+                                    type: 'imageModal',
+                                    position: [0, 0, -500], 
+                                    title: 'Стол с микроскопом',
+                                    image: '../assets/images/table_101.jpg', 
+                                    subHotspots: [
+                                        {
+                                            x: 30,   
+                                            y: 45,   
+                                            model: '../assets/models/microscope.glb',
+                                            title: 'Микроскоп',
+                                            description: 'Описание микроскопа...'
+                                        }
+                                    ]
                                 }
                             ]
                         },
 
-                        // Основная комната 102
                         {
                             id: 'room102-1',
                             name: '102',
@@ -50,27 +40,19 @@ export const TOUR_DATA = {
                             panorama: '../assets/panoramas/first/102.jpg',
                             hotspots: [
                                 {
-                                    type: 'zone',
+                                    type: 'imageModal',
                                     position: [150, -100, -400],
-                                    target: 'zone_helmet_102',
-                                    title: 'Стол со шлемом'
-                                }
-                            ]
-                        },
-                        // Зона для шлема
-                        {
-                            id: 'zone_helmet_102',
-                            name: 'Стол со шлемом',
-                            type: 'zone',
-                            parentId: 'room102-1',
-                            panorama: '../assets/panoramas/first/102.jpg',
-                            hotspots: [
-                                {
-                                    type: 'info',
-                                    position: [150, -100, -400],
-                                    model: '../assets/models/helmet.glb',
-                                    title: 'Шлем',
-                                    description: 'Описание шлема...'
+                                    title: 'Стол со шлемом',
+                                    image: '../assets/panoramas/first/102.jpg',
+                                    subHotspots: [
+                                        {
+                                            x: 55,
+                                            y: 40,
+                                            model: '../assets/models/helmet.glb',
+                                            title: 'Шлем',
+                                            description: 'Описание шлема...'
+                                        }
+                                    ]
                                 }
                             ]
                         }
@@ -80,35 +62,26 @@ export const TOUR_DATA = {
                     id: 'frame4',
                     name: '4 - Корпус',
                     rooms: [
-                        // Основная комната 201
                         {
-                            id: 'room201-1',
+                            id: 'room201-4',
                             name: '201',
                             type: 'room',
-                            panorama: '../assets/panoramas/first/101.jpg',
+                            panorama: '../assets/panoramas/first/201.jpg',
                             hotspots: [
                                 {
-                                    type: 'zone',
-                                    position: [350, -100, -400],
-                                    target: 'zone_tank_201',
-                                    title: 'Стол с танком'
-                                }
-                            ]
-                        },
-                        // Зона для танка
-                        {
-                            id: 'zone_tank_201',
-                            name: 'Стол с танком',
-                            type: 'zone',
-                            parentId: 'room201-1',
-                            panorama: '../assets/panoramas/first/101.jpg',
-                            hotspots: [
-                                {
-                                    type: 'info',
-                                    position: [350, -100, -400],
-                                    model: '../assets/models/tank.glb',
-                                    title: 'Танк',
-                                    description: 'Описание танка...'
+                                    type: 'imageModal',
+                                    position: [150, -100, -400],
+                                    title: 'Стол со шлемом',
+                                    image: '../assets/panoramas/first/201.jpg',
+                                    subHotspots: [
+                                        {
+                                            x: 55,
+                                            y: 40,
+                                            model: '../assets/models/helmet.glb',
+                                            title: 'Шлем',
+                                            description: 'Описание шлема...'
+                                        }
+                                    ]
                                 }
                             ]
                         }
@@ -124,130 +97,107 @@ export const TOUR_DATA = {
                     id: 'frame3',
                     name: '3 - Корпус',
                     rooms: [
-                        // Основная комната 107
                         {
                             id: 'room107-3',
                             name: '107',
                             type: 'room',
-                            panorama: '../assets/panoramas/third/107.jpg',
+                            panorama: '../assets/panoramas/technopark/107/107.jpg',
                             hotspots: [
                                 {
-                                    type: 'zone',
-                                    position: [250, -100, -400],
-                                    target: 'zone_taxi_107',
-                                    title: 'Стол с такси'
-                                },
-                                {
-                                    type: 'zone',
+                                    type: 'imageModal',
                                     position: [150, -100, -400],
-                                    target: 'zone_helmet_107',
-                                    title: 'Стол со шлемом'
-                                }
-                            ]
-                        },
-                        // Зона для такси (107)
-                        {
-                            id: 'zone_taxi_107',
-                            name: 'Стол с такси',
-                            type: 'zone',
-                            parentId: 'room107-3',
-                            panorama: '../assets/panoramas/third/107.jpg',
-                            hotspots: [
-                                {
-                                    type: 'info',
-                                    position: [250, -100, -400],
-                                    model: '../assets/models/taxi.glb',
-                                    title: 'Такси',
-                                    description: 'Описание такси...'
-                                },
-
-                                {
-                                    type: 'info',
-                                    position: [150, -100, -400],
-                                    model: '../assets/models/helmet.glb',
-                                    title: 'Такси',
-                                    description: 'Описание такси...'
-                                },
-
-                                {
-                                    type: 'info',
-                                    position: [200, -100, -400],
-                                    model: '../assets/models/tank.glb',
-                                    title: 'Такси',
-                                    description: 'Описание такси...'
-                                },
-                            ]
-                        },
-                        // Зона для шлема (107)
-                        {
-                            id: 'zone_helmet_107',
-                            name: 'Стол со шлемом',
-                            type: 'zone',
-                            parentId: 'room107-3',
-                            panorama: '../assets/panoramas/third/107.jpg',
-                            hotspots: [
-                                {
-                                    type: 'info',
-                                    position: [150, -100, -400],
-                                    model: '../assets/models/helmet.glb',
-                                    title: 'Шлем',
-                                    description: 'Описание шлема...'
+                                    title: 'Стол со шлемом',
+                                    image: '../assets/panoramas/technopark/107/107.jpg',
+                                    subHotspots: [
+                                        {
+                                            x: 55,
+                                            y: 40,
+                                            model: '../assets/models/helmet.glb',
+                                            title: 'Шлем',
+                                            description: 'Описание шлема...'
+                                        }
+                                    ]
                                 }
                             ]
                         },
 
-                        // Основная комната 112
+                        {
+                            id: 'room110-3',
+                            name: '110',
+                            type: 'room',
+                            panorama: '../assets/panoramas/technopark/110/110.jpg',
+                            hotspots: [
+                                {
+                                    type: 'imageModal',
+                                    position: [150, -100, -400],
+                                    title: 'Стол со шлемом',
+                                    image: '../assets/panoramas/technopark/110/100.jpg',
+                                    subHotspots: [
+                                        {
+                                            x: 55,
+                                            y: 40,
+                                            model: '../assets/models/helmet.glb',
+                                            title: 'Шлем',
+                                            description: 'Описание шлема...'
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+
+                        {
+                            id: 'room111-3',
+                            name: '111',
+                            type: 'room',
+                            panorama: '../assets/panoramas/technopark/111/111.jpg',
+                            hotspots: [
+                                {
+                                    type: 'imageModal',
+                                    position: [150, -100, -400],
+                                    title: 'Стол со шлемом',
+                                    image: '../assets/panoramas/technopark/111/111.jpg',
+                                    subHotspots: [
+                                        {
+                                            x: 55,
+                                            y: 40,
+                                            model: '../assets/models/helmet.glb',
+                                            title: 'Шлем',
+                                            description: 'Описание шлема...'
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+
+
                         {
                             id: 'room112-3',
                             name: '112',
                             type: 'room',
-                            panorama: '../assets/panoramas/third/112.jpg',
+                            panorama: '../assets/panoramas/technopark/112/112.jpg',
                             hotspots: [
                                 {
-                                    type: 'zone',
-                                    position: [250, -100, -400],
-                                    target: 'zone_taxi_112',
-                                    title: 'Стол с такси'
-                                },
-                                {
-                                    type: 'zone',
-                                    position: [150, -100, -400],
-                                    target: 'zone_helmet_112',
-                                    title: 'Стол со шлемом'
-                                }
-                            ]
-                        },
-                        // Зона для такси (112)
-                        {
-                            id: 'zone_taxi_112',
-                            name: 'Стол с такси',
-                            type: 'zone',
-                            parentId: 'room112-3',
-                            panorama: '../assets/panoramas/third/112.jpg',
-                            hotspots: [
-                                {
-                                    type: 'info',
-                                    position: [250, -100, -400],
-                                    model: '../assets/models/taxi.glb',
-                                    title: 'Такси',
-                                    description: 'Описание такси...'
-                                }
-                            ]
-                        },
-                        // Зона для шлема (112)
-                        {
-                            id: 'zone_helmet_112',
-                            name: 'Стол со шлемом',
-                            type: 'zone',
-                            parentId: 'room112-3',
-                            panorama: '../assets/panoramas/third/112.jpg',
-                            hotspots: [
-                                {
-                                    type: 'info',
-                                    position: [150, -100, -400],
-                                    model: '../assets/models/helmet.glb',
-                                    title: 'Шлем',
-                                    description: 'Описание шлема...'
+                                    type: 'imageModal',
+                                    position: [-650, -100, 350],
+                                    title: 'Автономные мобильные роботы',
+                                    image: '../assets/panoramas/technopark/112/112_table.jpg',
+                                    subHotspots: [
+                                        {
+                                            x: 57,
+                                            y: 72,
+                                            model: '../assets/models/robokit.glb',
+                                            title: 'Робо-кит',
+                                            description: 'Автономные мобильные роботы (АМР или AMR — Autonomous Mobile Robots) — это «высшая лига» программируемых машинок. В отличие от обычных радиоуправляемых моделей или простых роботов, которые едут строго по линии, АМР умеют принимать решения самостоятельно.'
+                                        },
+
+                                        {
+                                            x: 33,
+                                            y: 71,
+                                            model: '../assets/models/robot.glb',
+                                            title: 'Робот',
+                                            description: 'Автономные мобильные роботы (АМР или AMR — Autonomous Mobile Robots) — это «высшая лига» программируемых машинок. В отличие от обычных радиоуправляемых моделей или простых роботов, которые едут строго по линии, АМР умеют принимать решения самостоятельно.'
+                                        }
+                                    ]
                                 }
                             ]
                         }

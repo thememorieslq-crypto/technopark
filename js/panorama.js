@@ -136,8 +136,7 @@ function _loadRoomInternal(roomId) {
         sphere = new THREE.Mesh(geometry, material);
         scene.add(sphere);
 
-        const filterTypes = currentRoomType === 'zone' ? ['info'] : ['zone'];
-        createHotspots(scene, roomData.hotspots, camera, renderer, filterTypes);
+        createHotspots(scene, roomData.hotspots, camera, renderer, null);
 
         if (loaderEl) loaderEl.classList.add('hidden');
         fadeIn();

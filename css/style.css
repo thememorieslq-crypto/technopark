@@ -379,3 +379,15 @@ body.is-dragging * {
         min-width: 150px;
     }
 }
+
+.image-hotspot {
+    transition: transform 0.2s, background-color 0.2s;
+}
+.image-hotspot:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+    background-color: rgba(46, 125, 50, 0.9);
+}
+
+#modal-text{
+    line-height: 1.5rem;
+}

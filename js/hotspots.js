@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { loadRoom } from './panorama.js';
-import { openModal } from './modal.js';
+import { openModal, openImageModal } from './modal.js';
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -161,7 +161,9 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
             if (data.type === 'nav' || data.type === 'zone') {
                 loadRoom(data.target);
             } else if (data.type === 'info') {
-                openModal(data, hotspots); // передаём все hotspots для списка
+                openModal(data, hotspots);
+            } else if (data.type === 'imageModal') {
+                openImageModal(data);
             }
         }
     };

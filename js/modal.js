@@ -3,9 +3,12 @@ import { TOUR_DATA } from "./data.js";
 let overlay, modelViewer, modalTitle, modalText, modelLoader;
 let currentItems = [];
 let currentIndex = 0;
-
 let currentLoadHandler = null;
 let loaderTimeout = null;
+
+// Переменные для режима изображения
+let imageContainer, imageElement, hotspotsContainer;
+let currentSubHotspots = [];
 
 export function initModal() {
     overlay = document.getElementById("overlay");
@@ -47,6 +50,109 @@ export function initModal() {
 
     // Закрытие по клику на фон
     overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
+    // Создаём контейнер для изображения с подметками
+    const modal3d = document.querySelector('.modal-3d');
+    const imageWrapper = document.createElement('div');
+    imageWrapper.id = 'image-modal-content';
+    imageWrapper.style.display = 'none';
+    imageWrapper.style.position = 'relative';
+    imageWrapper.style.width = '100%';
+    imageWrapper.style.height = '100%';
+    imageWrapper.style.background = '#1a1a1a';
+    imageWrapper.style.display = 'flex';
+    imageWrapper.style.alignItems = 'center';
+    imageWrapper.style.justifyContent = 'center';
+
+    imageElement = document.createElement('img');
+    imageElement.style.maxWidth = '100%';
+    imageElement.style.maxHeight = '100%';
+    imageElement.style.objectFit = 'contain';
+    imageElement.style.cursor = 'default';
+
+    hotspotsContainer = document.createElement('div');
+    hotspotsContainer.style.position = 'absolute';
+    hotspotsContainer.style.top = '0';
+    hotspotsContainer.style.left = '0';
+    hotspotsContainer.style.width = '100%';
+    hotspotsContainer.style.height = '100%';
+    hotspotsContainer.style.pointerEvents = 'none';
+
+    imageWrapper.appendChild(imageElement);
+    imageWrapper.appendChild(hotspotsContainer);
+    modal3d.appendChild(imageWrapper);
+
+    imageContainer = imageWrapper;
+}
+
+export function openImageModal(hotspotData) {
+    // Скрываем model-viewer
+    modelViewer.style.display = 'none';
+    // Показываем контейнер с изображением
+    imageContainer.style.display = 'flex';
+
+    // Устанавливаем изображение
+    imageElement.src = hotspotData.image;
+    currentSubHotspots = hotspotData.subHotspots;
+
+    // Генерируем подметки поверх изображения
+    generateImageHotspots(hotspotData.subHotspots);
+
+    modalTitle.innerText = hotspotData.title;
+    modalText.innerText = 'Кликните на предмет, чтобы рассмотреть 3D-модель';
+
+    overlay.style.display = "flex";
+}
+
+function generateImageHotspots(subHotspots) {
+    hotspotsContainer.innerHTML = '';
+    subHotspots.forEach((spot, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'image-hotspot';
+        btn.style.position = 'absolute';
+        btn.style.left = `${spot.x}%`;
+        btn.style.top = `${spot.y}%`;
+        btn.style.transform = 'translate(-50%, -50%)';
+        btn.style.width = '40px';
+        btn.style.height = '40px';
+        btn.style.borderRadius = '50%';
+        btn.style.backgroundColor = 'rgba(76, 175, 80, 0.8)';
+        btn.style.border = '2px solid white';
+        btn.style.color = 'white';
+        btn.style.fontSize = '20px';
+        btn.style.fontWeight = 'bold';
+        btn.style.cursor = 'pointer';
+        btn.style.pointerEvents = 'auto';
+        btn.style.zIndex = '10';
+        btn.textContent = 'i';
+        btn.title = spot.title;
+
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            open3DModel(spot);
+        };
+        hotspotsContainer.appendChild(btn);
+    });
+}
+
+function open3DModel(modelData) {
+    // Скрываем изображение, показываем model-viewer
+    imageContainer.style.display = 'none';
+    modelViewer.style.display = 'block';
+
+    modalTitle.innerText = modelData.title;
+    modalText.innerText = modelData.description;
+    modelViewer.src = modelData.model;
+}
+
+export function closeModal() {
+    overlay.style.display = "none";
+    // Сбрасываем режим на model-viewer
+    modelViewer.style.display = 'block';
+    imageContainer.style.display = 'none';
+    document.getElementById("models-list-overlay").classList.remove('active');
+    // Очищаем подметки
+    hotspotsContainer.innerHTML = '';
 }
 
 export function openModal(hotspotData, allRoomHotspots = []) {
@@ -73,30 +179,13 @@ function updateModalContent() {
     modalTitle.innerText = data.title;
     modalText.innerText = data.description;
 
-    // Сброс загрузки
-    modelLoader.classList.remove('hidden');
-
-    // Удаляем предыдущий обработчик load
     if (currentLoadHandler) {
         modelViewer.removeEventListener('load', currentLoadHandler);
     }
-
-    // Добавляем новый обработчик (однократный)
-    currentLoadHandler = () => {
-        modelLoader.classList.add('hidden');
-    };
-    modelViewer.addEventListener('load', currentLoadHandler, { once: true });
-
-    // Очищаем предыдущий таймер
     if (loaderTimeout) clearTimeout(loaderTimeout);
-    // Если модель не загрузилась за 5 секунд – скрываем лоадер принудительно
-    loaderTimeout = setTimeout(() => {
-        modelLoader.classList.add('hidden');
-    }, 5000);
 
     modelViewer.src = data.model;
 
-    // Подсвечиваем активный элемент в списке
     renderList();
 }
 
@@ -122,12 +211,6 @@ function renderList() {
         };
         listContainer.appendChild(row);
     });
-}
-
-export function closeModal() {
-    overlay.style.display = "none";
-    document.getElementById("models-list-overlay").classList.remove('active');
-    // Останавливаем загрузку модели, если она идёт? model-viewer сам управляет.
 }
 
 export function preloadRoomModels(hotspots) {
