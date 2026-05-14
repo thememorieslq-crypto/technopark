@@ -147,7 +147,7 @@ function _loadRoomInternal(roomId) {
 
         setTimeout(() => {
             roomData.hotspots
-                .filter(h => h.type === 'nav' && h.target)
+                .filter(h => h.type === 'zone' && h.target)
                 .forEach(h => preloadPanorama(h.target));
         }, 200);
     };
