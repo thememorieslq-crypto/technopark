@@ -9,6 +9,7 @@ let loaderTimeout = null;
 // Для изображений
 let imageContainer, imageElement, hotspotsContainer;
 let currentSubHotspots = [];
+let isImageModalMode = false; // Флаг: смотрим ли мы подмодели из картинки
 
 // ОПТИМИЗАЦИЯ: кэш предзагруженных 3D-моделей
 const modelCache = new Map(); // key = src, value = true (загружена)
@@ -102,16 +103,29 @@ function preloadModel(modelUrl) {
 }
 
 export function openImageModal(hotspotData) {
+    isImageModalMode = true; 
     modelViewer.style.display = 'none';
     imageContainer.style.display = 'flex';
     imageElement.src = hotspotData.image;
-    currentSubHotspots = hotspotData.subHotspots;
-    generateImageHotspots(hotspotData.subHotspots);
+    
+    // СКРЫВАЕМ СТРЕЛКИ, так как сейчас показывается только общая картинка
+    const prevBtn = document.getElementById("prev-model");
+    const nextBtn = document.getElementById("next-model");
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+
+    currentSubHotspots = hotspotData.subHotspots || [];
+    currentItems = currentSubHotspots; 
+    currentIndex = 0;
+
+    generateImageHotspots(currentSubHotspots);
     modalTitle.innerText = hotspotData.title;
     modalText.innerText = 'Кликните на предмет, чтобы рассмотреть 3D-модель';
+    
+    renderList(); 
     overlay.style.display = "flex";
 
-    // ОПТИМИЗАЦИЯ: предзагружаем 3D-модели всех подхотспотов
+    // ОПТИМИЗАЦИЯ
     if (hotspotData.subHotspots && hotspotData.subHotspots.length) {
         hotspotData.subHotspots.forEach(spot => {
             if (spot.model && !modelCache.has(spot.model)) {
@@ -145,19 +159,11 @@ function generateImageHotspots(subHotspots) {
         btn.title = spot.title;
         btn.onclick = (e) => {
             e.stopPropagation();
-            open3DModel(spot);
+            currentIndex = idx; // Запоминаем, на какой индекс кликнули
+            updateModalContent(); // Используем стандартное обновление контента
         };
         hotspotsContainer.appendChild(btn);
     });
-}
-
-function open3DModel(modelData) {
-    imageContainer.style.display = 'none';
-    modelViewer.style.display = 'block';
-    modalTitle.innerText = modelData.title;
-    modalText.innerText = modelData.description;
-    // ОПТИМИЗАЦИЯ: если модель уже была предзагружена, браузер возьмёт из кэша
-    modelViewer.src = modelData.model;
 }
 
 export function closeModal() {
@@ -166,11 +172,21 @@ export function closeModal() {
     imageContainer.style.display = 'none';
     document.getElementById("models-list-overlay").classList.remove('active');
     hotspotsContainer.innerHTML = '';
-    // ОПТИМИЗАЦИЯ: сбросим src model-viewer, чтобы остановить рендеринг
     modelViewer.src = '';
+    isImageModalMode = false; 
+
+    // Сбрасываем видимость стрелок для следующего открытия
+    const prevBtn = document.getElementById("prev-model");
+    const nextBtn = document.getElementById("next-model");
+    if (prevBtn) prevBtn.style.display = 'block';
+    if (nextBtn) nextBtn.style.display = 'block';
 }
 
 export function openModal(hotspotData, allRoomHotspots = []) {
+    isImageModalMode = false; // Стандартный режим 3D-окна
+    imageContainer.style.display = 'none';
+    modelViewer.style.display = 'block';
+
     if (!Array.isArray(allRoomHotspots) || allRoomHotspots.length === 0) {
         currentItems = [hotspotData];
     } else {
@@ -178,25 +194,43 @@ export function openModal(hotspotData, allRoomHotspots = []) {
     }
     currentIndex = currentItems.findIndex(item => item.model === hotspotData.model);
     if (currentIndex === -1) currentIndex = 0;
+    
     renderList();
     updateModalContent();
+    overlay.style.flexDirection = "row"; // На всякий случай сбросим флекс-направление
     overlay.style.display = "flex";
 }
 
 function updateModalContent() {
     const data = currentItems[currentIndex];
     if (!data) return;
+
+    if (isImageModalMode) {
+        imageContainer.style.display = 'none';
+        modelViewer.style.display = 'block';
+
+        // ПОКАЗЫВАЕМ СТРЕЛКИ обратно, так как мы перешли в режим 3D-модели
+        // Стрелки появятся только если в этой локации больше 1 предмета
+        const prevBtn = document.getElementById("prev-model");
+        const nextBtn = document.getElementById("next-model");
+        if (prevBtn) prevBtn.style.display = currentItems.length > 1 ? 'block' : 'none';
+        if (nextBtn) nextBtn.style.display = currentItems.length > 1 ? 'block' : 'none';
+    }
+
     modalTitle.innerText = data.title;
     modalText.innerText = data.description;
+    
     if (currentLoadHandler) {
         modelViewer.removeEventListener('load', currentLoadHandler);
     }
     if (loaderTimeout) clearTimeout(loaderTimeout);
+    
     modelViewer.src = data.model;
-    renderList();
+    renderList(); 
 }
 
 function switchModel(direction) {
+    if (currentItems.length === 0) return;
     currentIndex = (currentIndex + direction + currentItems.length) % currentItems.length;
     updateModalContent();
 }
@@ -205,6 +239,12 @@ function renderList() {
     const listContainer = document.getElementById("models-list-overlay");
     if (!listContainer) return;
     listContainer.innerHTML = '<h3>Предметы в этой локации:</h3>';
+    
+    if (currentItems.length === 0) {
+        listContainer.innerHTML += '<div>Нет доступных предметов</div>';
+        return;
+    }
+
     currentItems.forEach((item, index) => {
         const row = document.createElement('div');
         row.className = 'model-item-link' + (index === currentIndex ? ' active-item' : '');
@@ -226,7 +266,6 @@ export function preloadRoomModels(hotspots) {
             link.rel = 'prefetch';
             link.href = hs.model;
             document.head.appendChild(link);
-            // ОПТИМИЗАЦИЯ: также предзагружаем модель в фоне через скрытый viewer
             preloadModel(hs.model);
         }
     });
