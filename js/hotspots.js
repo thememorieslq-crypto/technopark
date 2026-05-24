@@ -5,14 +5,24 @@ import { openModal, openImageModal } from './modal.js';
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let hotspotObjects = [];
-let tooltipSprite = null;
+let tooltipSprite = null;          // Один переиспользуемый спрайт
+let tooltipMaterial = null;        // Материал для него
 
-// Ссылки на текущие обработчики для возможности их удаления
+// Кэши текстур
+const iconTextureCache = {
+    info: null,
+    nav: null
+};
+const tooltipTextureCache = {};
+
+// Ссылки на обработчики
 let currentMouseMoveHandler = null;
 let currentMouseLeaveHandler = null;
 let currentClickHandler = null;
 
-// Создание текстуры-иконки
+// --------------------------------------------------------------
+// 1. Создание текстур иконок (кэшируются по типу)
+// --------------------------------------------------------------
 function createIconTexture(type) {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
@@ -45,35 +55,67 @@ function createIconTexture(type) {
         ctx.fillText('➤', 32, 34);
     }
 
-    return new THREE.CanvasTexture(canvas);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
 }
 
-// Создание текстуры для тултипа
-function createTooltipTexture(text) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 256;
-    canvas.height = 48;
-    ctx.fillStyle = 'rgba(20,20,20,0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = '16px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-    return new THREE.CanvasTexture(canvas);
-}
-
-export function createHotspots(scene, hotspots, camera, renderer, filterTypes = null) {
-    // Удаляем старые метки и тултип
-    hotspotObjects.forEach(obj => scene.remove(obj));
-    if (tooltipSprite) {
-        scene.remove(tooltipSprite);
-        tooltipSprite = null;
+// Предзагрузка текстур иконок (вызывается один раз при старте)
+export function preloadIconTextures() {
+    if (!iconTextureCache.info) {
+        iconTextureCache.info = createIconTexture('info');
+        iconTextureCache.nav = createIconTexture('nav');
     }
+}
+
+// --------------------------------------------------------------
+// 2. Получение текстуры тултипа из кэша (по тексту)
+// --------------------------------------------------------------
+function getTooltipTexture(text) {
+    if (!tooltipTextureCache[text]) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 256;
+        canvas.height = 48;
+        ctx.fillStyle = 'rgba(20,20,20,0.85)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        tooltipTextureCache[text] = texture;
+    }
+    return tooltipTextureCache[text];
+}
+
+// --------------------------------------------------------------
+// 3. Инициализация единого спрайта тултипа
+// --------------------------------------------------------------
+function initTooltipSprite(scene) {
+    if (tooltipSprite) return;
+    tooltipMaterial = new THREE.SpriteMaterial({
+        map: getTooltipTexture(''), // временная текстура
+        depthTest: false,
+        depthWrite: false,
+        transparent: true
+    });
+    tooltipSprite = new THREE.Sprite(tooltipMaterial);
+    tooltipSprite.visible = false;
+    scene.add(tooltipSprite);
+}
+
+// --------------------------------------------------------------
+// 4. Основная функция: создание хотспотов в текущей комнате
+// --------------------------------------------------------------
+export function createHotspots(scene, hotspots, camera, renderer, filterTypes = null) {
+    // Удаляем старые метки
+    hotspotObjects.forEach(obj => scene.remove(obj));
     hotspotObjects = [];
 
-    // Удаляем предыдущие обработчики событий
+    // Удаляем предыдущие обработчики
     if (currentMouseMoveHandler) {
         renderer.domElement.removeEventListener('mousemove', currentMouseMoveHandler);
     }
@@ -84,14 +126,16 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
         renderer.domElement.removeEventListener('click', currentClickHandler);
     }
 
-    // Фильтруем метки по типам
+    // Убедимся, что текстуры иконок загружены
+    preloadIconTextures();
+
     const visibleHotspots = filterTypes
         ? hotspots.filter(h => filterTypes.includes(h.type))
         : hotspots;
 
-    // Создаём новые метки
+    // Создаём новые спрайты, переиспользуя текстуры иконок
     visibleHotspots.forEach(h => {
-        const texture = createIconTexture(h.type);
+        const texture = (h.type === 'info') ? iconTextureCache.info : iconTextureCache.nav;
         const material = new THREE.SpriteMaterial({
             map: texture,
             transparent: true,
@@ -102,69 +146,64 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
         sprite.position.set(...h.position);
         sprite.scale.set(40, 40, 1);
         sprite.userData = h;
-
         scene.add(sprite);
         hotspotObjects.push(sprite);
     });
 
-    // --- Тултипы при наведении ---
+    // Инициализируем (или сбрасываем) тултип-спрайт
+    initTooltipSprite(scene);
+    if (tooltipSprite) tooltipSprite.visible = false;
+
+    // --- Обработчик движения мыши (оптимизированный) ---
     currentMouseMoveHandler = (event) => {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(hotspotObjects);
 
-        if (intersects.length > 0) {
-            renderer.domElement.style.cursor = 'pointer';
-        } else {
-            renderer.domElement.style.cursor = 'default';
+        renderer.domElement.style.cursor = intersects.length ? 'pointer' : 'default';
+
+        if (!tooltipSprite) return;
+
+        if (intersects.length === 0) {
+            tooltipSprite.visible = false;
+            return;
         }
 
-        if (tooltipSprite) {
-            scene.remove(tooltipSprite);
-            tooltipSprite = null;
+        const data = intersects[0].object.userData;
+        const text = data.title || (data.type === 'nav' ? `→ ${data.target}` : 'ℹ️ Подробнее');
+
+        const texture = getTooltipTexture(text);
+        if (tooltipSprite.material.map !== texture) {
+            tooltipSprite.material.map = texture;
+            tooltipSprite.material.needsUpdate = true;
         }
 
-        if (intersects.length > 0) {
-            const data = intersects[0].object.userData;
-            const text = data.title || (data.type === 'nav' ? `→ ${data.target}` : 'ℹ️ Подробнее');
-            const texture = createTooltipTexture(text);
-            const material = new THREE.SpriteMaterial({
-                map: texture,
-                depthTest: false,
-                depthWrite: false
-            });
-            const sprite = new THREE.Sprite(material);
-            sprite.position.copy(intersects[0].object.position.clone().add(new THREE.Vector3(0, 35, 0)));
-            sprite.scale.set(180, 34, 1);
-            scene.add(sprite);
-            tooltipSprite = sprite;
-        }
+        const pos = intersects[0].object.position.clone().add(new THREE.Vector3(0, 35, 0));
+        tooltipSprite.position.copy(pos);
+        tooltipSprite.scale.set(180, 34, 1);
+        tooltipSprite.visible = true;
     };
 
     currentMouseLeaveHandler = () => {
-        if (tooltipSprite) {
-            scene.remove(tooltipSprite);
-            tooltipSprite = null;
-        }
+        if (tooltipSprite) tooltipSprite.visible = false;
+        renderer.domElement.style.cursor = 'default';
     };
 
     currentClickHandler = (event) => {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);
-
         const intersects = raycaster.intersectObjects(hotspotObjects);
+        if (intersects.length === 0) return;
 
-        if (intersects.length > 0) {
-            const data = intersects[0].object.userData;
-            if (data.type === 'nav' || data.type === 'zone') {
-                loadRoom(data.target);
-            } else if (data.type === 'info') {
-                openModal(data, hotspots);
-            } else if (data.type === 'imageModal') {
-                openImageModal(data);
-            }
+        const data = intersects[0].object.userData;
+        if (data.type === 'nav' || data.type === 'zone') {
+            loadRoom(data.target);
+        } else if (data.type === 'info') {
+            openModal(data, hotspots);
+        } else if (data.type === 'imageModal') {
+            openImageModal(data);
         }
     };
 

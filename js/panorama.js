@@ -6,15 +6,14 @@ import { ROOMS_INDEX } from './data.js';
 
 THREE.Cache.enabled = true;
 
-let scene, camera, renderer, sphere;
+let scene, camera, renderer, sphereMesh;   // sphereMesh переиспользуется
 let controls;
 let currentRoomId = null;
 let currentRoomType = 'room';
+let currentMaterial = null;                // текущий материал для сферы
 
 const textureCache = {};
 let fadeOverlay;
-
-// Флаги для предотвращения множественных вызовов
 let isLoading = false;
 let fadeTimer = null;
 
@@ -44,6 +43,12 @@ export function initPanorama(container) {
     controls.addEventListener('end', () => {
         document.body.classList.remove('is-dragging');
     });
+
+    // ОПТИМИЗАЦИЯ: создаём геометрию сферы один раз
+    const geometry = new THREE.SphereGeometry(500, 64, 64);
+    geometry.scale(-1, 1, 1);
+    sphereMesh = new THREE.Mesh(geometry);
+    scene.add(sphereMesh);
 
     fadeOverlay = document.createElement('div');
     fadeOverlay.id = 'fade-overlay';
@@ -112,7 +117,7 @@ function _loadRoomInternal(roomId) {
     currentRoomId = roomId;
     currentRoomType = roomData.type || 'room';
 
-    // Управление кнопкой "Назад" через parentId
+    // Кнопка "Назад"
     const backBtn = document.getElementById('back-btn');
     if (backBtn) {
         if (roomData.parentId) {
@@ -126,15 +131,17 @@ function _loadRoomInternal(roomId) {
     const loaderEl = document.getElementById('panorama-loader');
     if (loaderEl) loaderEl.classList.remove('hidden');
 
-    if (sphere) scene.remove(sphere);
-
-    const geometry = new THREE.SphereGeometry(500, 64, 64);
-    geometry.scale(-1, 1, 1);
-
     const onTextureReady = (texture) => {
-        const material = new THREE.MeshBasicMaterial({ map: texture });
-        sphere = new THREE.Mesh(geometry, material);
-        scene.add(sphere);
+        // ОПТИМИЗАЦИЯ: отключаем мип-мапы для панорамы
+        texture.minFilter = THREE.LinearFilter;
+        texture.generateMipmaps = false;
+
+        // Освобождаем старый материал, если есть
+        if (currentMaterial) {
+            currentMaterial.dispose();
+        }
+        currentMaterial = new THREE.MeshBasicMaterial({ map: texture });
+        sphereMesh.material = currentMaterial;
 
         createHotspots(scene, roomData.hotspots, camera, renderer, null);
 

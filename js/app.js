@@ -1,6 +1,10 @@
 import { initPanorama, loadRoom } from './panorama.js';
 import { TOUR_DATA, ROOMS_INDEX } from './data.js';
 import { initModal } from './modal.js';
+import { preloadIconTextures } from './hotspots.js'; // ОПТИМИЗАЦИЯ: предзагрузка иконок
+
+// Предзагружаем текстуры иконок до старта
+preloadIconTextures();
 
 initPanorama(document.getElementById('app'));
 initModal();
@@ -12,40 +16,33 @@ try {
 } catch (e) {}
 loadRoom(startRoom);
 
-// ===== Иерархическое бургер-меню =====
+// Иерархическое бургер-меню
 function initRoomUI() {
     const list = document.getElementById('room-list');
     const burger = document.getElementById('burger-btn');
-
     burger.onclick = () => list.classList.toggle('show');
     list.innerHTML = '';
 
     TOUR_DATA.buildings.forEach(building => {
         const buildingDiv = document.createElement('div');
         buildingDiv.className = 'menu-building';
-
         const buildingHeader = document.createElement('div');
         buildingHeader.className = 'building-header';
         buildingHeader.innerHTML = `${building.name} <span class="toggle">▼</span>`;
         buildingDiv.appendChild(buildingHeader);
-
         const floorsContainer = document.createElement('div');
         floorsContainer.className = 'floors-container';
         floorsContainer.style.display = 'none';
-
         building.floors.forEach(floor => {
             const floorDiv = document.createElement('div');
             floorDiv.className = 'menu-floor';
-
             const floorHeader = document.createElement('div');
             floorHeader.className = 'floor-header';
             floorHeader.innerHTML = `${floor.name} <span class="toggle">▼</span>`;
             floorDiv.appendChild(floorHeader);
-
             const roomsContainer = document.createElement('div');
             roomsContainer.className = 'rooms-container';
             roomsContainer.style.display = 'none';
-
             floor.rooms
                 .filter(room => room.type === 'room')
                 .forEach(room => {
@@ -59,9 +56,7 @@ function initRoomUI() {
                     };
                     roomsContainer.appendChild(roomBtn);
                 });
-
             floorDiv.appendChild(roomsContainer);
-
             floorHeader.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const isHidden = roomsContainer.style.display === 'none';
@@ -69,12 +64,9 @@ function initRoomUI() {
                 const span = floorHeader.querySelector('.toggle');
                 if (span) span.textContent = isHidden ? '▲' : '▼';
             });
-
             floorsContainer.appendChild(floorDiv);
         });
-
         buildingDiv.appendChild(floorsContainer);
-
         buildingHeader.addEventListener('click', (e) => {
             e.stopPropagation();
             const isHidden = floorsContainer.style.display === 'none';
@@ -82,11 +74,7 @@ function initRoomUI() {
             const span = buildingHeader.querySelector('.toggle');
             if (span) span.textContent = isHidden ? '▲' : '▼';
         });
-
         list.appendChild(buildingDiv);
     });
 }
-
 initRoomUI();
-
-// Мета-тег viewport уже есть в index.html, поэтому функция не нужна.
