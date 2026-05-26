@@ -8,7 +8,21 @@ preloadIconTextures();
 
 initPanorama(document.getElementById('app'));
 initModal();
-
+setTimeout(() => {
+    for (const roomId in ROOMS_INDEX) {
+        const room = ROOMS_INDEX[roomId];
+        if (room.hotspots) {
+            room.hotspots.forEach(spot => {
+                if (spot.model) {
+                    const link = document.createElement('link');
+                    link.rel = 'prefetch';
+                    link.href = spot.model;
+                    document.head.appendChild(link);
+                }
+            });
+        }
+    }
+}, 1000);
 let startRoom = 'room101-1';
 try {
     const saved = localStorage.getItem('lastRoom');

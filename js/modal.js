@@ -172,7 +172,7 @@ export function closeModal() {
     imageContainer.style.display = 'none';
     document.getElementById("models-list-overlay").classList.remove('active');
     hotspotsContainer.innerHTML = '';
-    modelViewer.src = '';
+    // modelViewer.src = '';
     isImageModalMode = false; 
 
     // Сбрасываем видимость стрелок для следующего открытия
