@@ -131,12 +131,68 @@ function _loadRoomInternal(roomId) {
     const loaderEl = document.getElementById('panorama-loader');
     if (loaderEl) loaderEl.classList.remove('hidden');
 
-    const onTextureReady = (texture) => {
-        // ОПТИМИЗАЦИЯ: отключаем мип-мапы для панорамы
+    // ========== ПРОВЕРКА НА "В РАЗРАБОТКЕ" ==========
+    if (roomData.underConstruction === true) {
+        // Создаём текстуру-заглушку
+        const canvas = document.createElement('canvas');
+        canvas.width = 2048;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+
+        // Тёмный фон
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Градиентный круг в центре
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 300);
+        gradient.addColorStop(0, '#16213e');
+        gradient.addColorStop(1, '#0f0f1a');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 350, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Иконка строительства (шестерёнка/кирпичик)
+        ctx.font = 'bold 180px sans-serif';
+        ctx.fillStyle = '#e94560';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('', centerX, centerY - 80);
+
+        // Текст "В РАЗРАБОТКЕ"
+        ctx.font = 'bold 90px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('В РАЗРАБОТКЕ', centerX, centerY + 60);
+
+        // Подтекст
+        ctx.font = '36px sans-serif';
+        ctx.fillStyle = '#888888';
+        ctx.fillText('Эта аудитория скоро появится', centerX, centerY + 150);
+
+        const texture = new THREE.CanvasTexture(canvas);
         texture.minFilter = THREE.LinearFilter;
         texture.generateMipmaps = false;
 
-        // Освобождаем старый материал, если есть
+        if (currentMaterial) currentMaterial.dispose();
+        currentMaterial = new THREE.MeshBasicMaterial({ map: texture });
+        sphereMesh.material = currentMaterial;
+
+        // НЕ создаём хотспоты
+        createHotspots(scene, [], camera, renderer, null);
+
+        if (loaderEl) loaderEl.classList.add('hidden');
+        fadeIn();
+        return; // Выходим, чтобы не грузить панораму
+    }
+    // ========== КОНЕЦ ПРОВЕРКИ ==========
+
+    // Дальше идёт ОРИГИНАЛЬНЫЙ код для нормальных комнат
+    const onTextureReady = (texture) => {
+        texture.minFilter = THREE.LinearFilter;
+        texture.generateMipmaps = false;
+
         if (currentMaterial) {
             currentMaterial.dispose();
         }

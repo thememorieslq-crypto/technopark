@@ -62,7 +62,8 @@ function initRoomUI() {
                 .forEach(room => {
                     const roomBtn = document.createElement('button');
                     roomBtn.className = 'room-button';
-                    roomBtn.innerHTML = `${room.name}`;
+                    const isUnderConstruction = room.underConstruction === true;
+                    roomBtn.innerHTML = `${room.name} ${isUnderConstruction ? '🚧' : ''}`;
                     roomBtn.onclick = (e) => {
                         e.stopPropagation();
                         loadRoom(room.id);
