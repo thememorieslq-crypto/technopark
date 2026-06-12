@@ -1,28 +1,127 @@
 import * as THREE from 'three';
 import { loadRoom } from './panorama.js';
 import { openModal, openImageModal } from './modal.js';
+import { getLocalizedText } from './data.js';
+import { getCurrentLang } from './locales.js';
 
+// ========== ЗВУК ПРИ НАВЕДЕНИИ ==========
+let hoverSound = null;
+let lastHoveredHotspot = null;
+let soundEnabled = true;
+
+function initHoverSound() {
+    if (hoverSound) return;
+    
+    try {
+        hoverSound = new Audio('./assets/sounds/select.wav');
+        hoverSound.volume = 0.1;
+        hoverSound.preload = 'auto';
+        
+        hoverSound.onerror = () => {
+            console.warn('Звуковой файл не загружен, путь: ./assets/sounds/select.wav');
+            soundEnabled = false;
+        };
+    } catch(e) {
+        console.warn('Звук не поддерживается:', e);
+        soundEnabled = false;
+    }
+}
+
+function playHoverSound() {
+    if (!soundEnabled) return;
+    if (!hoverSound) initHoverSound();
+    if (!hoverSound) return;
+    
+    try {
+        hoverSound.pause();
+        hoverSound.currentTime = 0;
+        hoverSound.play().catch(e => {});
+    } catch(e) {}
+}
+
+// ========== ТУЛТИП ==========
+let tooltipDiv = null;
+
+function createTooltipDiv() {
+    const div = document.createElement('div');
+    div.id = 'custom-tooltip';
+    div.style.position = 'fixed';
+    div.style.backgroundColor = 'rgba(0,0,0,0.85)';
+    div.style.color = '#fff';
+    div.style.borderRadius = '8px';
+    div.style.padding = '8px 12px';
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.gap = '10px';
+    div.style.fontFamily = 'sans-serif';
+    div.style.fontSize = '14px';
+    div.style.pointerEvents = 'none';
+    div.style.zIndex = '10000';
+    div.style.whiteSpace = 'nowrap';
+    div.style.backdropFilter = 'blur(4px)';
+    div.style.border = '1px solid rgba(255,255,255,0.2)';
+    div.style.transition = 'opacity 0.2s';
+    div.style.opacity = '0';
+    div.style.visibility = 'hidden';
+    document.body.appendChild(div);
+    return div;
+}
+
+function showTooltip(hotspotData, mouseX, mouseY) {
+    if (!tooltipDiv) tooltipDiv = createTooltipDiv();
+    
+    const lang = getCurrentLang();
+    let thumbnail = hotspotData.thumbnail || hotspotData.image || '';
+    let title = hotspotData.title ? getLocalizedText(hotspotData.title, lang) : (hotspotData.type === 'nav' ? `→ ${hotspotData.target}` : 'Информация');
+    
+    let html = '';
+    if (thumbnail) {
+        html += `<img src="${thumbnail}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">`;
+    } else {
+        html += `<div style="width: 40px; height: 40px; background: ${hotspotData.type === 'info' ? '#4caf50' : '#2196f3'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">${hotspotData.type === 'info' ? 'i' : '→'}</div>`;
+    }
+    html += `<span>${escapeHtml(title)}</span>`;
+    tooltipDiv.innerHTML = html;
+    
+    tooltipDiv.style.left = (mouseX + 15) + 'px';
+    tooltipDiv.style.top = (mouseY + 15) + 'px';
+    tooltipDiv.style.opacity = '1';
+    tooltipDiv.style.visibility = 'visible';
+}
+
+function hideTooltip() {
+    if (tooltipDiv) {
+        tooltipDiv.style.opacity = '0';
+        tooltipDiv.style.visibility = 'hidden';
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+// ========== ОСНОВНАЯ ЧАСТЬ ==========
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let hotspotObjects = [];
-let tooltipSprite = null;          // Один переиспользуемый спрайт
-let tooltipMaterial = null;        // Материал для него
+let tooltipSprite = null;
 
-// Кэши текстур
 const iconTextureCache = {
     info: null,
     nav: null
 };
 const tooltipTextureCache = {};
 
-// Ссылки на обработчики
 let currentMouseMoveHandler = null;
 let currentMouseLeaveHandler = null;
 let currentClickHandler = null;
 
-// --------------------------------------------------------------
-// 1. Создание текстур иконок (кэшируются по типу)
-// --------------------------------------------------------------
 function createIconTexture(type) {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
@@ -60,7 +159,6 @@ function createIconTexture(type) {
     return texture;
 }
 
-// Предзагрузка текстур иконок (вызывается один раз при старте)
 export function preloadIconTextures() {
     if (!iconTextureCache.info) {
         iconTextureCache.info = createIconTexture('info');
@@ -68,9 +166,6 @@ export function preloadIconTextures() {
     }
 }
 
-// --------------------------------------------------------------
-// 2. Получение текстуры тултипа из кэша (по тексту)
-// --------------------------------------------------------------
 function getTooltipTexture(text) {
     if (!tooltipTextureCache[text]) {
         const canvas = document.createElement('canvas');
@@ -91,31 +186,12 @@ function getTooltipTexture(text) {
     return tooltipTextureCache[text];
 }
 
-// --------------------------------------------------------------
-// 3. Инициализация единого спрайта тултипа
-// --------------------------------------------------------------
-function initTooltipSprite(scene) {
-    if (tooltipSprite) return;
-    tooltipMaterial = new THREE.SpriteMaterial({
-        map: getTooltipTexture(''), // временная текстура
-        depthTest: false,
-        depthWrite: false,
-        transparent: true
-    });
-    tooltipSprite = new THREE.Sprite(tooltipMaterial);
-    tooltipSprite.visible = false;
-    scene.add(tooltipSprite);
-}
-
-// --------------------------------------------------------------
-// 4. Основная функция: создание хотспотов в текущей комнате
-// --------------------------------------------------------------
 export function createHotspots(scene, hotspots, camera, renderer, filterTypes = null) {
-    // Удаляем старые метки
+    initHoverSound();
+    
     hotspotObjects.forEach(obj => scene.remove(obj));
     hotspotObjects = [];
 
-    // Удаляем предыдущие обработчики
     if (currentMouseMoveHandler) {
         renderer.domElement.removeEventListener('mousemove', currentMouseMoveHandler);
     }
@@ -126,14 +202,12 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
         renderer.domElement.removeEventListener('click', currentClickHandler);
     }
 
-    // Убедимся, что текстуры иконок загружены
     preloadIconTextures();
 
     const visibleHotspots = filterTypes
         ? hotspots.filter(h => filterTypes.includes(h.type))
         : hotspots;
 
-    // Создаём новые спрайты, переиспользуя текстуры иконок
     visibleHotspots.forEach(h => {
         const texture = (h.type === 'info') ? iconTextureCache.info : iconTextureCache.nav;
         const material = new THREE.SpriteMaterial({
@@ -150,11 +224,8 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
         hotspotObjects.push(sprite);
     });
 
-    // Инициализируем (или сбрасываем) тултип-спрайт
-    initTooltipSprite(scene);
     if (tooltipSprite) tooltipSprite.visible = false;
 
-    // --- Обработчик движения мыши (оптимизированный) ---
     currentMouseMoveHandler = (event) => {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -163,31 +234,26 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
 
         renderer.domElement.style.cursor = intersects.length ? 'pointer' : 'default';
 
-        if (!tooltipSprite) return;
-
         if (intersects.length === 0) {
-            tooltipSprite.visible = false;
+            hideTooltip();
+            lastHoveredHotspot = null;
             return;
         }
 
         const data = intersects[0].object.userData;
-        const text = data.title || (data.type === 'nav' ? `→ ${data.target}` : 'ℹ️ Подробнее');
-
-        const texture = getTooltipTexture(text);
-        if (tooltipSprite.material.map !== texture) {
-            tooltipSprite.material.map = texture;
-            tooltipSprite.material.needsUpdate = true;
+        
+        if (lastHoveredHotspot !== data) {
+            lastHoveredHotspot = data;
+            playHoverSound();
         }
-
-        const pos = intersects[0].object.position.clone().add(new THREE.Vector3(0, 35, 0));
-        tooltipSprite.position.copy(pos);
-        tooltipSprite.scale.set(180, 34, 1);
-        tooltipSprite.visible = true;
+        
+        showTooltip(data, event.clientX, event.clientY);
     };
 
     currentMouseLeaveHandler = () => {
-        if (tooltipSprite) tooltipSprite.visible = false;
+        hideTooltip();
         renderer.domElement.style.cursor = 'default';
+        lastHoveredHotspot = null;
     };
 
     currentClickHandler = (event) => {

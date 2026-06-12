@@ -1,4 +1,6 @@
 import { TOUR_DATA } from "./data.js";
+import { getLocalizedText } from './data.js';
+import { t, getCurrentLang, subscribeToLanguage, forceUpdateUI } from './locales.js';
 
 let overlay, modelViewer, modalTitle, modalText, modelLoader;
 let currentItems = [];
@@ -6,26 +8,178 @@ let currentIndex = 0;
 let currentLoadHandler = null;
 let loaderTimeout = null;
 
-// Для изображений
 let imageContainer, imageElement, hotspotsContainer;
 let currentSubHotspots = [];
-let isImageModalMode = false; // Флаг: смотрим ли мы подмодели из картинки
+let isImageModalMode = false;
 
-// ОПТИМИЗАЦИЯ: кэш предзагруженных 3D-моделей
-const modelCache = new Map(); // key = src, value = true (загружена)
+const modelCache = new Map();
+
+let subHotspotTooltip = null;
+
+// ========== ЗВУК ДЛЯ ПОДХОТСПОТОВ ==========
+let subHoverSound = null;
+let lastHoveredSubSpot = null;
+let subSoundEnabled = true;
+
+function initSubHoverSound() {
+    if (subHoverSound) return;
+    
+    try {
+        subHoverSound = new Audio('path'); // путь для звука
+        subHoverSound.volume = 0.4;
+        subHoverSound.preload = 'auto';
+        subHoverSound.onerror = () => {
+            console.warn('Звуковой файл hover.mp3 не загружен');
+            subSoundEnabled = false;
+        };
+    } catch(e) {
+        console.warn('Звук не поддерживается:', e);
+        subSoundEnabled = false;
+    }
+}
+
+function playSubHoverSound() {
+    if (!subSoundEnabled) return;
+    if (!subHoverSound) initSubHoverSound();
+    if (!subHoverSound) return;
+    
+    try {
+        subHoverSound.pause();
+        subHoverSound.currentTime = 0;
+        subHoverSound.play().catch(e => {});
+    } catch(e) {}
+}
+
+// ========== ЗВУКИ ДЛЯ ОТКРЫТИЯ/ЗАКРЫТИЯ МОДАЛКИ ==========
+let openSound = null;
+let closeSound = null;
+let soundsEnabled = true;
+
+function initModalSounds() {
+    if (openSound) return;
+    
+    try {
+        openSound = new Audio('./assets/sounds/whoosh.wav');
+        openSound.volume = 0.2;
+        openSound.preload = 'auto';
+        openSound.onerror = () => {
+            console.warn('Файл не загружен');
+            soundsEnabled = false;
+        };
+        
+        closeSound = new Audio('./assets/sounds/whoosh.wav');
+        closeSound.volume = 0.2;
+        closeSound.preload = 'auto';
+        closeSound.onerror = () => {
+            console.warn('Файл не загружен');
+            soundsEnabled = false;
+        };
+    } catch(e) {
+        console.warn('Звук не поддерживается:', e);
+        soundsEnabled = false;
+    }
+}
+
+function playOpenSound() {
+    if (!soundsEnabled) return;
+    if (!openSound) initModalSounds();
+    if (!openSound) return;
+    try {
+        openSound.pause();
+        openSound.currentTime = 0;
+        openSound.play().catch(e => {});
+    } catch(e) {}
+}
+
+function playCloseSound() {
+    if (!soundsEnabled) return;
+    if (!closeSound) initModalSounds();
+    if (!closeSound) return;
+    try {
+        closeSound.pause();
+        closeSound.currentTime = 0;
+        closeSound.play().catch(e => {});
+    } catch(e) {}
+}
+
+// ========== ТУЛТИП ДЛЯ ПОДХОТСПОТОВ ==========
+function createSubHotspotTooltip() {
+    const div = document.createElement('div');
+    div.id = 'subhotspot-tooltip';
+    div.style.position = 'fixed';
+    div.style.backgroundColor = 'rgba(0,0,0,0.85)';
+    div.style.color = '#fff';
+    div.style.borderRadius = '8px';
+    div.style.padding = '8px 12px';
+    div.style.fontFamily = 'sans-serif';
+    div.style.fontSize = '14px';
+    div.style.pointerEvents = 'none';
+    div.style.zIndex = '10001';
+    div.style.backdropFilter = 'blur(4px)';
+    div.style.border = '1px solid rgba(255,255,255,0.2)';
+    div.style.transition = 'opacity 0.2s';
+    div.style.opacity = '0';
+    div.style.visibility = 'hidden';
+    div.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+    document.body.appendChild(div);
+    return div;
+}
+
+function showSubHotspotTooltip(spot, x, y) {
+    if (!subHotspotTooltip) subHotspotTooltip = createSubHotspotTooltip();
+    
+    const lang = getCurrentLang();
+    let thumbnail = spot.thumbnail || '';
+    let title = getLocalizedText(spot.title, lang);
+    
+    let html = '';
+    if (thumbnail) {
+        html += `<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 150px;">
+                    <img src="${thumbnail}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                    <span style="text-align: center; word-break: break-word;">${escapeHtml(title)}</span>
+                 </div>`;
+    } else {
+        html += `<span style="max-width: 200px; white-space: normal; word-break: break-word;">${escapeHtml(title)}</span>`;
+    }
+    
+    subHotspotTooltip.innerHTML = html;
+    subHotspotTooltip.style.left = (x + 15) + 'px';
+    subHotspotTooltip.style.top = (y + 15) + 'px';
+    subHotspotTooltip.style.opacity = '1';
+    subHotspotTooltip.style.visibility = 'visible';
+}
+
+function hideSubHotspotTooltip() {
+    if (subHotspotTooltip) {
+        subHotspotTooltip.style.opacity = '0';
+        subHotspotTooltip.style.visibility = 'hidden';
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
 
 export function initModal() {
+    initModalSounds();
+    initSubHoverSound();
+    
     overlay = document.getElementById("overlay");
     modelViewer = document.getElementById("model-viewer");
     modalTitle = document.getElementById("modal-title");
     modalText = document.getElementById("modal-text");
     modelLoader = document.getElementById('model-loader');
 
-    // ОПТИМИЗАЦИЯ: добавляем атрибуты для model-viewer прямо в JS, если их нет
     if (modelViewer && !modelViewer.hasAttribute('loading')) {
         modelViewer.setAttribute('loading', 'lazy');
         modelViewer.setAttribute('reveal', 'interaction');
-        modelViewer.setAttribute('compression', 'draco'); // если модели сжаты Draco
+        modelViewer.setAttribute('compression', 'draco');
     }
 
     const closeBtn = document.getElementById("close-modal");
@@ -38,23 +192,54 @@ export function initModal() {
             <button class="nav-btn" id="next-model">❯</button>
             <div id="models-list-overlay"></div>
         `);
-        const modalInfo = document.querySelector('.modal-info');
-        modalInfo.insertAdjacentHTML('beforeend', `<button id="show-all-btn">Весь список предметов</button>`);
     }
 
     document.getElementById("prev-model").onclick = (e) => { e.stopPropagation(); switchModel(-1); };
     document.getElementById("next-model").onclick = (e) => { e.stopPropagation(); switchModel(1); };
-    document.getElementById("show-all-btn").onclick = (e) => {
-        e.stopPropagation();
-        document.getElementById("models-list-overlay").classList.toggle('active');
-    };
+    
+    // ========== СОЗДАЁМ КНОПКУ "ВЕСЬ СПИСОК ПРЕДМЕТОВ" ==========
+    const modalInfo = document.querySelector('.modal-info');
+    if (modalInfo && !document.getElementById('show-all-btn')) {
+        const showAllBtn = document.createElement('button');
+        showAllBtn.id = 'show-all-btn';
+        showAllBtn.textContent = t('allItems');
+        showAllBtn.style.cssText = 'margin-top: auto; padding: 15px; background: #f0f0f0; border: none; border-radius: 10px; cursor: pointer; font-weight: bold;';
+        showAllBtn.onclick = (e) => {
+            e.stopPropagation();
+            document.getElementById("models-list-overlay").classList.toggle('active');
+        };
+        modalInfo.appendChild(showAllBtn);
+    }
+    
+    // ========== СОЗДАЁМ КНОПКУ "НАЗАД" ==========
+    if (modalInfo && !document.getElementById('modal-back-btn')) {
+        const backBtn = document.createElement('button');
+        backBtn.id = 'modal-back-btn';
+        backBtn.textContent = t('back');
+        backBtn.style.cssText = 'margin-bottom: 15px; padding: 8px 16px; background: #333; color: white; border: none; border-radius: 8px; cursor: pointer; align-self: flex-start;';
+        backBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (isImageModalMode && modelViewer.style.display === 'block') {
+                modelViewer.style.display = 'none';
+                imageContainer.style.display = 'flex';
+                const prevBtn = document.getElementById("prev-model");
+                const nextBtn = document.getElementById("next-model");
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
+            } else if (isImageModalMode && imageContainer.style.display === 'flex') {
+                closeModal();
+            } else {
+                closeModal();
+            }
+        };
+        modalInfo.insertBefore(backBtn, modalInfo.firstChild);
+    }
 
     window.addEventListener('keydown', (e) => {
         if (e.key === "Escape") closeModal();
     });
     overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
 
-    // Контейнер для изображения
     const modal3d = document.querySelector('.modal-3d');
     const imageWrapper = document.createElement('div');
     imageWrapper.id = 'image-modal-content';
@@ -85,9 +270,31 @@ export function initModal() {
     imageWrapper.appendChild(hotspotsContainer);
     modal3d.appendChild(imageWrapper);
     imageContainer = imageWrapper;
+    
+    // ========== ПОДПИСКА НА СМЕНУ ЯЗЫКА ==========
+    subscribeToLanguage(() => {
+        const showAllBtnElem = document.getElementById("show-all-btn");
+        if (showAllBtnElem) showAllBtnElem.innerText = t('allItems');
+        
+        const modalBackBtnElem = document.getElementById("modal-back-btn");
+        if (modalBackBtnElem) modalBackBtnElem.textContent = t('back');
+        
+        if (overlay && overlay.style.display === 'flex') {
+            const data = currentItems[currentIndex];
+            if (data) {
+                modalTitle.innerText = getLocalizedText(data.title, getCurrentLang());
+                modalText.innerText = getLocalizedText(data.description, getCurrentLang());
+            }
+            if (isImageModalMode && modalText) {
+                modalText.innerText = t('clickOnItem');
+            }
+            renderList();
+        }
+    });
+    
+    forceUpdateUI();
 }
 
-// ОПТИМИЗАЦИЯ: функция предзагрузки модели в фоне
 function preloadModel(modelUrl) {
     if (modelCache.has(modelUrl)) return;
     const hiddenViewer = document.createElement('model-viewer');
@@ -103,12 +310,13 @@ function preloadModel(modelUrl) {
 }
 
 export function openImageModal(hotspotData) {
+    playOpenSound();
+    
     isImageModalMode = true; 
     modelViewer.style.display = 'none';
     imageContainer.style.display = 'flex';
     imageElement.src = hotspotData.image;
     
-    // СКРЫВАЕМ СТРЕЛКИ, так как сейчас показывается только общая картинка
     const prevBtn = document.getElementById("prev-model");
     const nextBtn = document.getElementById("next-model");
     if (prevBtn) prevBtn.style.display = 'none';
@@ -119,13 +327,14 @@ export function openImageModal(hotspotData) {
     currentIndex = 0;
 
     generateImageHotspots(currentSubHotspots);
-    modalTitle.innerText = hotspotData.title;
-    modalText.innerText = 'Кликните на предмет, чтобы рассмотреть 3D-модель';
+    
+    const lang = getCurrentLang();
+    modalTitle.innerText = getLocalizedText(hotspotData.title, lang);
+    modalText.innerText = t('clickOnItem');
     
     renderList(); 
     overlay.style.display = "flex";
 
-    // ОПТИМИЗАЦИЯ
     if (hotspotData.subHotspots && hotspotData.subHotspots.length) {
         hotspotData.subHotspots.forEach(spot => {
             if (spot.model && !modelCache.has(spot.model)) {
@@ -137,6 +346,7 @@ export function openImageModal(hotspotData) {
 
 function generateImageHotspots(subHotspots) {
     hotspotsContainer.innerHTML = '';
+    
     subHotspots.forEach((spot, idx) => {
         const btn = document.createElement('button');
         btn.className = 'image-hotspot';
@@ -147,7 +357,7 @@ function generateImageHotspots(subHotspots) {
         btn.style.width = '40px';
         btn.style.height = '40px';
         btn.style.borderRadius = '50%';
-        btn.style.backgroundColor = 'rgba(76, 175, 80, 0.8)';
+        btn.style.backgroundColor = 'rgba(76, 175, 80, 0.9)';
         btn.style.border = '2px solid white';
         btn.style.color = 'white';
         btn.style.fontSize = '20px';
@@ -155,27 +365,62 @@ function generateImageHotspots(subHotspots) {
         btn.style.cursor = 'pointer';
         btn.style.pointerEvents = 'auto';
         btn.style.zIndex = '10';
+        btn.style.transition = 'transform 0.2s, background-color 0.2s';
         btn.textContent = 'i';
-        btn.title = spot.title;
+        
+        btn.addEventListener('mouseenter', (e) => {
+            if (lastHoveredSubSpot !== spot) {
+                lastHoveredSubSpot = spot;
+                playSubHoverSound();
+            }
+            showSubHotspotTooltip(spot, e.clientX, e.clientY);
+        });
+        btn.addEventListener('mousemove', (e) => {
+            showSubHotspotTooltip(spot, e.clientX, e.clientY);
+        });
+        btn.addEventListener('mouseleave', () => {
+            hideSubHotspotTooltip();
+            lastHoveredSubSpot = null;
+        });
+        
+        let touchTimer = null;
+        btn.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            playSubHoverSound();
+            touchTimer = setTimeout(() => {
+                showSubHotspotTooltip(spot, touch.clientX, touch.clientY);
+            }, 500);
+        });
+        btn.addEventListener('touchend', () => {
+            if (touchTimer) clearTimeout(touchTimer);
+            hideSubHotspotTooltip();
+        });
+        btn.addEventListener('touchmove', () => {
+            if (touchTimer) clearTimeout(touchTimer);
+            hideSubHotspotTooltip();
+        });
+        
         btn.onclick = (e) => {
             e.stopPropagation();
-            currentIndex = idx; // Запоминаем, на какой индекс кликнули
-            updateModalContent(); // Используем стандартное обновление контента
+            currentIndex = idx;
+            updateModalContent();
         };
+        
         hotspotsContainer.appendChild(btn);
     });
 }
 
 export function closeModal() {
+    playCloseSound();
+    
     overlay.style.display = "none";
     modelViewer.style.display = 'block';
     imageContainer.style.display = 'none';
     document.getElementById("models-list-overlay").classList.remove('active');
     hotspotsContainer.innerHTML = '';
-    // modelViewer.src = '';
+    hideSubHotspotTooltip();
     isImageModalMode = false; 
 
-    // Сбрасываем видимость стрелок для следующего открытия
     const prevBtn = document.getElementById("prev-model");
     const nextBtn = document.getElementById("next-model");
     if (prevBtn) prevBtn.style.display = 'block';
@@ -183,7 +428,9 @@ export function closeModal() {
 }
 
 export function openModal(hotspotData, allRoomHotspots = []) {
-    isImageModalMode = false; // Стандартный режим 3D-окна
+    playOpenSound();
+    
+    isImageModalMode = false;
     imageContainer.style.display = 'none';
     modelViewer.style.display = 'block';
 
@@ -197,28 +444,28 @@ export function openModal(hotspotData, allRoomHotspots = []) {
     
     renderList();
     updateModalContent();
-    overlay.style.flexDirection = "row"; // На всякий случай сбросим флекс-направление
+    overlay.style.flexDirection = "row";
     overlay.style.display = "flex";
 }
 
 function updateModalContent() {
     const data = currentItems[currentIndex];
     if (!data) return;
+    
+    const lang = getCurrentLang();
 
     if (isImageModalMode) {
         imageContainer.style.display = 'none';
         modelViewer.style.display = 'block';
 
-        // ПОКАЗЫВАЕМ СТРЕЛКИ обратно, так как мы перешли в режим 3D-модели
-        // Стрелки появятся только если в этой локации больше 1 предмета
         const prevBtn = document.getElementById("prev-model");
         const nextBtn = document.getElementById("next-model");
         if (prevBtn) prevBtn.style.display = currentItems.length > 1 ? 'block' : 'none';
         if (nextBtn) nextBtn.style.display = currentItems.length > 1 ? 'block' : 'none';
     }
 
-    modalTitle.innerText = data.title;
-    modalText.innerText = data.description;
+    modalTitle.innerText = getLocalizedText(data.title, lang);
+    modalText.innerText = getLocalizedText(data.description, lang);
     
     if (currentLoadHandler) {
         modelViewer.removeEventListener('load', currentLoadHandler);
@@ -238,17 +485,19 @@ function switchModel(direction) {
 function renderList() {
     const listContainer = document.getElementById("models-list-overlay");
     if (!listContainer) return;
-    listContainer.innerHTML = '<h3>Предметы в этой локации:</h3>';
+    
+    const lang = getCurrentLang();
+    listContainer.innerHTML = `<h3>${t('itemsInRoom')}</h3>`;
     
     if (currentItems.length === 0) {
-        listContainer.innerHTML += '<div>Нет доступных предметов</div>';
+        listContainer.innerHTML += `<div>${t('noItems')}</div>`;
         return;
     }
 
     currentItems.forEach((item, index) => {
         const row = document.createElement('div');
         row.className = 'model-item-link' + (index === currentIndex ? ' active-item' : '');
-        row.innerText = item.title || `Предмет ${index + 1}`;
+        row.innerText = getLocalizedText(item.title, lang) || `${t('typeItem')} ${index + 1}`;
         row.onclick = (e) => {
             e.stopPropagation();
             currentIndex = index;

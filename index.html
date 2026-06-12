@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Технопарк 360°</title>
-    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="/css/style.css" />
 
     <script type="importmap">
         {
@@ -15,15 +15,41 @@
     </script>
 
     <script type="module" src="./libs/model-viewer.min.js"></script>
-    <script type="module" src="js/app.js"></script>
+    <script type="module" src="/js/app.js"></script>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Технопарк 360°">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
 </head>
 <body>
 
     <!-- Бургер-меню + кнопка назад -->
     <div id="room-menu">
         <button id="burger-btn">☰</button>
-        <button id="back-btn" style="display:none;">Назад</button>
+        <button id="search-btn" style="margin-left: 10px; background: rgba(20,20,20,0.9); color: white; border: 1px solid #555; border-radius: 4px; padding: 10px 16px; font-size: 18px; cursor: pointer;">🔍</button>
         <div id="room-list"></div>
+    </div>
+
+    <!-- Модальное окно поиска -->
+    <div id="search-modal" class="search-modal" style="display: none;">
+        <div class="search-modal-content">
+            <div class="search-modal-header">
+                <h3>Поиск</h3>
+                <button id="close-search-btn" class="close-search-btn">&times;</button>
+            </div>
+            <div class="search-tabs">
+                <button id="tab-equipment" class="search-tab active">Оборудование</button>
+                <button id="tab-rooms" class="search-tab">Аудитории</button>
+            </div>
+            <div class="search-modal-body">
+                <input type="text" id="search-input" placeholder="Поиск..." autocomplete="off">
+                <div id="search-results" class="search-results"></div>
+            </div>
+        </div>
     </div>
 
     <div id="app"></div>
@@ -54,5 +80,19 @@
         </div>
     </div>
 
+    <script>
+        // Регистрация Service Worker для PWA
+        if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('Service Worker зарегистрирован:', registration.scope);
+            })
+            .catch(error => {
+                console.log('Ошибка регистрации Service Worker:', error);
+            });
+        });
+        }
+    </script>
 </body>
 </html>

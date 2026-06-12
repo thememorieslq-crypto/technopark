@@ -1,13 +1,18 @@
 import { initPanorama, loadRoom } from './panorama.js';
-import { TOUR_DATA, ROOMS_INDEX } from './data.js';
+import { TOUR_DATA, ROOMS_INDEX, getLocalizedText } from './data.js';
 import { initModal } from './modal.js';
-import { preloadIconTextures } from './hotspots.js'; // ОПТИМИЗАЦИЯ: предзагрузка иконок
+import { preloadIconTextures } from './hotspots.js';
+import { initSearch } from './search.js';
+import { initLanguage, subscribeToLanguage, getCurrentLang, t, forceUpdateUI } from './locales.js';
 
 // Предзагружаем текстуры иконок до старта
 preloadIconTextures();
 
 initPanorama(document.getElementById('app'));
 initModal();
+initSearch();
+initLanguage();
+forceUpdateUI(); 
 setTimeout(() => {
     for (const roomId in ROOMS_INDEX) {
         const room = ROOMS_INDEX[roomId];
@@ -23,6 +28,7 @@ setTimeout(() => {
         }
     }
 }, 1000);
+
 let startRoom = 'room101-1';
 try {
     const saved = localStorage.getItem('lastRoom');
@@ -30,11 +36,12 @@ try {
 } catch (e) {}
 loadRoom(startRoom);
 
-// Иерархическое бургер-меню
-function initRoomUI() {
+// Иерархическое бургер-меню с поддержкой языков
+function buildMenu() {
     const list = document.getElementById('room-list');
-    const burger = document.getElementById('burger-btn');
-    burger.onclick = () => list.classList.toggle('show');
+    if (!list) return;
+    
+    const currentLang = getCurrentLang();
     list.innerHTML = '';
 
     TOUR_DATA.buildings.forEach(building => {
@@ -42,28 +49,33 @@ function initRoomUI() {
         buildingDiv.className = 'menu-building';
         const buildingHeader = document.createElement('div');
         buildingHeader.className = 'building-header';
-        buildingHeader.innerHTML = `${building.name} <span class="toggle">▼</span>`;
+        buildingHeader.innerHTML = `${getLocalizedText(building.name, currentLang)} <span class="toggle">▼</span>`;
         buildingDiv.appendChild(buildingHeader);
+        
         const floorsContainer = document.createElement('div');
         floorsContainer.className = 'floors-container';
         floorsContainer.style.display = 'none';
+        
         building.floors.forEach(floor => {
             const floorDiv = document.createElement('div');
             floorDiv.className = 'menu-floor';
             const floorHeader = document.createElement('div');
             floorHeader.className = 'floor-header';
-            floorHeader.innerHTML = `${floor.name} <span class="toggle">▼</span>`;
+            floorHeader.innerHTML = `${getLocalizedText(floor.name, currentLang)} <span class="toggle">▼</span>`;
             floorDiv.appendChild(floorHeader);
+            
             const roomsContainer = document.createElement('div');
             roomsContainer.className = 'rooms-container';
             roomsContainer.style.display = 'none';
+            
             floor.rooms
                 .filter(room => room.type === 'room')
                 .forEach(room => {
                     const roomBtn = document.createElement('button');
                     roomBtn.className = 'room-button';
                     const isUnderConstruction = room.underConstruction === true;
-                    roomBtn.innerHTML = `${room.name} ${isUnderConstruction ? '🚧' : ''}`;
+                    const roomName = getLocalizedText(room.name, currentLang);
+                    roomBtn.innerHTML = `${roomName} ${isUnderConstruction ? '🚧' : ''}`;
                     roomBtn.onclick = (e) => {
                         e.stopPropagation();
                         loadRoom(room.id);
@@ -71,6 +83,7 @@ function initRoomUI() {
                     };
                     roomsContainer.appendChild(roomBtn);
                 });
+            
             floorDiv.appendChild(roomsContainer);
             floorHeader.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -81,6 +94,7 @@ function initRoomUI() {
             });
             floorsContainer.appendChild(floorDiv);
         });
+        
         buildingDiv.appendChild(floorsContainer);
         buildingHeader.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -92,4 +106,24 @@ function initRoomUI() {
         list.appendChild(buildingDiv);
     });
 }
+
+// Инициализация бургер-меню
+function initRoomUI() {
+    const list = document.getElementById('room-list');
+    const burger = document.getElementById('burger-btn');
+    if (burger) {
+        burger.onclick = () => list.classList.toggle('show');
+    }
+    buildMenu();
+}
+
 initRoomUI();
+
+// Подписываемся на смену языка для обновления меню
+subscribeToLanguage(() => {
+    buildMenu();
+    // Обновляем текущую комнату, если нужно перезагрузить хотспоты
+    if (window.currentRoomId) {
+        loadRoom(window.currentRoomId);
+    }
+}); 
