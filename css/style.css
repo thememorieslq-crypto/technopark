@@ -140,7 +140,7 @@ canvas {
     background: #444;
 }
 
-/* ========== Модальное окно ========== */
+/* ========== Модальное окно (десктоп) ========== */
 .overlay {
     display: none;
     position: fixed;
@@ -271,6 +271,14 @@ canvas {
     border-radius: 10px;
     cursor: pointer;
     font-weight: bold;
+    transition: all 0.1s ease-in-out;
+}
+#show-all-btn:hover {
+    transform: scale(1.1);
+}
+
+#show-all-btn:active {
+    transform: scale(1);
 }
 
 /* ========== Второстепенные элементы ========== */
@@ -292,92 +300,6 @@ canvas {
 /* ========== Курсор при перетаскивании ========== */
 body.is-dragging * {
     cursor: grabbing !important;
-}
-
-/* ========== Адаптивность ========== */
-@media (max-width: 800px) {
-    .overlay {
-        align-items: flex-end;
-    }
-    .modal {
-        flex-direction: column;
-        width: 100%;
-        height: 80vh;
-        border-radius: 25px 25px 0 0;
-        animation: slideUp 0.3s ease-out;
-        top: auto;
-    }
-    @keyframes slideUp {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
-    }
-    .modal-3d {
-        width: 100%;
-        height: 55%;
-    }
-    .modal-info {
-        width: 100%;
-        height: 45%;
-        padding: 20px 25px;
-        border-left: none;
-        border-top: 1px solid #333;
-        overflow-y: auto;
-    }
-    .close-btn {
-        top: 15px;
-        right: 15px;
-        background: rgba(255,255,255,0.8);
-        border-radius: 50%;
-        width: 35px;
-        height: 35px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        color: #000;
-    }
-}
-
-@media (max-width: 768px) {
-    #room-menu {
-        top: 15px;
-        left: 15px;
-    }
-    #burger-btn {
-        padding: 8px 12px;
-        font-size: 18px;
-    }
-    #room-list {
-        min-width: 160px;
-    }
-    .room-button {
-        font-size: 14px;
-        padding: 8px 12px 8px 32px;
-    }
-    .building-header, .floor-header {
-        font-size: 14px;
-    }
-    #back-btn {
-        padding: 8px 12px;
-        font-size: 14px;
-    }
-    .loader span {
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    #room-menu {
-        top: 10px;
-        left: 10px;
-    }
-    #burger-btn {
-        padding: 6px 10px;
-        font-size: 16px;
-    }
-    #room-list {
-        min-width: 150px;
-    }
 }
 
 .image-hotspot {
@@ -583,22 +505,6 @@ body.is-dragging * {
     }
 }
 
-@media (max-width: 768px) {
-    .search-modal-content {
-        width: 85%;
-        margin-top: 60px;
-        max-height: 75vh;
-    }
-    
-    .search-modal-header {
-        padding: 16px 20px;
-    }
-    
-    .search-modal-body {
-        padding: 20px;
-    }
-}
-
 /* ========== ВКЛАДКИ ПОИСКА ========== */
 .search-tabs {
     display: flex;
@@ -642,3 +548,164 @@ body.is-dragging * {
     color: #2196f3;
 }
 
+/* ========== МОБИЛЬНАЯ АДАПТАЦИЯ (ТОЛЬКО ОДИН БЛОК) ========== */
+@media (max-width: 800px) {
+    .overlay {
+        align-items: flex-end;
+    }
+    .modal {
+        flex-direction: column;
+        width: 100%;
+        height: 80vh;
+        border-radius: 25px 25px 0 0;
+        animation: slideUp 0.3s ease-out;
+        top: auto;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    .modal-3d {
+        width: 100%;
+        height: 55%;
+    }
+    .modal-info {
+        width: 100%;
+        height: 45%;
+        padding: 20px 25px;
+        border-left: none;
+        border-top: 1px solid #e0e0e0;
+        overflow-y: auto;
+    }
+    .close-btn {
+        top: 15px;
+        right: 15px;
+        background: rgba(0,0,0,0.6);
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+    }
+    .close-btn:hover {
+        background: rgba(0,0,0,0.8);
+        transform: none;
+    }
+    
+    /* Бургер-меню на мобилках */
+    #room-menu {
+        top: 15px;
+        left: 15px;
+    }
+    #burger-btn {
+        padding: 8px 12px;
+        font-size: 18px;
+    }
+    #room-list {
+        min-width: 160px;
+    }
+    .room-button {
+        font-size: 14px;
+        padding: 8px 12px 8px 32px;
+    }
+    .building-header, .floor-header {
+        font-size: 14px;
+    }
+    #back-btn {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    .loader span {
+        font-size: 16px;
+    }
+    
+    /* Поиск на мобилках */
+    .search-modal {
+        align-items: flex-start;
+    }
+    .search-modal-content {
+        width: 90%;
+        margin-top: 60px;
+        max-height: 75vh;
+    }
+    .search-modal-header {
+        padding: 16px 20px;
+    }
+    .search-modal-header h3 {
+        font-size: 18px;
+    }
+    .search-modal-body {
+        padding: 16px;
+    }
+    .search-tabs {
+        padding: 0 16px;
+        gap: 16px;
+    }
+    .search-tab {
+        padding: 10px 0;
+        font-size: 13px;
+    }
+    #search-input {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+    .search-result-item {
+        padding: 12px 14px;
+    }
+    .search-result-title {
+        font-size: 14px;
+    }
+    .search-result-description {
+        font-size: 12px;
+    }
+    .search-result-room {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    #room-menu {
+        top: 10px;
+        left: 10px;
+    }
+    #burger-btn {
+        padding: 6px 10px;
+        font-size: 16px;
+    }
+    #room-list {
+        min-width: 150px;
+    }
+    .search-modal-content {
+        width: 95%;
+        margin-top: 50px;
+    }
+}
+
+@media (max-width: 800px) {
+    #models-list-overlay {
+        bottom: -150%;
+        border-radius: 20px 20px 0 0;
+    }
+    
+    #models-list-overlay.active {
+        bottom: 0;
+    }
+    
+    #show-all-btn {
+        width: 50%;
+        margin: 35px auto
+    }
+
+    #modal-text {
+        max-width: 85%;
+    }
+}
+
+/* Отключаем выделение на кнопках при таче */
+.image-hotspot {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}

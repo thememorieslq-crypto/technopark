@@ -4,6 +4,8 @@ import { openModal, openImageModal } from './modal.js';
 import { getLocalizedText } from './data.js';
 import { getCurrentLang } from './locales.js';
 
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+
 // ========== ЗВУК ПРИ НАВЕДЕНИИ ==========
 let hoverSound = null;
 let lastHoveredHotspot = null;
@@ -218,7 +220,8 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
         });
         const sprite = new THREE.Sprite(material);
         sprite.position.set(...h.position);
-        sprite.scale.set(40, 40, 1);
+        const spriteSize = isMobile ? 55 : 40;
+        sprite.scale.set(spriteSize, spriteSize, 1);
         sprite.userData = h;
         scene.add(sprite);
         hotspotObjects.push(sprite);
@@ -227,6 +230,12 @@ export function createHotspots(scene, hotspots, camera, renderer, filterTypes = 
     if (tooltipSprite) tooltipSprite.visible = false;
 
     currentMouseMoveHandler = (event) => {
+        if (isMobile) {
+            hideTooltip();
+            renderer.domElement.style.cursor = 'default';
+            return;
+        }
+        
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(mouse, camera);

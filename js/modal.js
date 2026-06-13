@@ -11,6 +11,8 @@ let loaderTimeout = null;
 let imageContainer, imageElement, hotspotsContainer;
 let currentSubHotspots = [];
 let isImageModalMode = false;
+let currentImageHotspotsData = null;
+let currentHotspotButtons = [];
 
 const modelCache = new Map();
 
@@ -25,11 +27,11 @@ function initSubHoverSound() {
     if (subHoverSound) return;
     
     try {
-        subHoverSound = new Audio('path'); // путь для звука
-        subHoverSound.volume = 0.4;
+        subHoverSound = new Audio('./assets/sounds/select.wav');
+        subHoverSound.volume = 0.1;
         subHoverSound.preload = 'auto';
         subHoverSound.onerror = () => {
-            console.warn('Звуковой файл hover.mp3 не загружен');
+            console.warn('Звуковой файл не загружен');
             subSoundEnabled = false;
         };
     } catch(e) {
@@ -166,6 +168,20 @@ function escapeHtml(str) {
     });
 }
 
+// ========== ОБНОВЛЕНИЕ ПОЗИЦИЙ ПОДХОТСПОТОВ ПРИ РЕСАЙЗЕ ==========
+function updateHotspotsPosition() {
+    if (!isImageModalMode || !imageContainer || imageContainer.style.display !== 'flex') return;
+    
+    for (let i = 0; i < currentHotspotButtons.length; i++) {
+        const btn = currentHotspotButtons[i];
+        const spot = btn._spot;
+        if (spot) {
+            btn.style.left = `${spot.x}%`;
+            btn.style.top = `${spot.y}%`;
+        }
+    }
+}
+
 export function initModal() {
     initModalSounds();
     initSubHoverSound();
@@ -271,6 +287,11 @@ export function initModal() {
     modal3d.appendChild(imageWrapper);
     imageContainer = imageWrapper;
     
+    // ========== ОБРАБОТЧИК РЕСАЙЗА ДЛЯ ПОДХОТСПОТОВ ==========
+    window.addEventListener('resize', () => {
+        updateHotspotsPosition();
+    });
+    
     // ========== ПОДПИСКА НА СМЕНУ ЯЗЫКА ==========
     subscribeToLanguage(() => {
         const showAllBtnElem = document.getElementById("show-all-btn");
@@ -323,6 +344,7 @@ export function openImageModal(hotspotData) {
     if (nextBtn) nextBtn.style.display = 'none';
 
     currentSubHotspots = hotspotData.subHotspots || [];
+    currentImageHotspotsData = hotspotData.subHotspots || [];
     currentItems = currentSubHotspots; 
     currentIndex = 0;
 
@@ -346,6 +368,7 @@ export function openImageModal(hotspotData) {
 
 function generateImageHotspots(subHotspots) {
     hotspotsContainer.innerHTML = '';
+    currentHotspotButtons = [];
     
     subHotspots.forEach((spot, idx) => {
         const btn = document.createElement('button');
@@ -368,6 +391,16 @@ function generateImageHotspots(subHotspots) {
         btn.style.transition = 'transform 0.2s, background-color 0.2s';
         btn.textContent = 'i';
         
+        btn._spot = spot;
+        btn._idx = idx;
+        
+        // Отключаем контекстное меню на телефоне
+        btn.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            return false;
+        });
+        
+        // Mouse events (для ПК)
         btn.addEventListener('mouseenter', (e) => {
             if (lastHoveredSubSpot !== spot) {
                 lastHoveredSubSpot = spot;
@@ -375,38 +408,59 @@ function generateImageHotspots(subHotspots) {
             }
             showSubHotspotTooltip(spot, e.clientX, e.clientY);
         });
-        btn.addEventListener('mousemove', (e) => {
-            showSubHotspotTooltip(spot, e.clientX, e.clientY);
-        });
         btn.addEventListener('mouseleave', () => {
             hideSubHotspotTooltip();
             lastHoveredSubSpot = null;
         });
         
+        // Touch events для телефона (долгое нажатие)
         let touchTimer = null;
+        let hasLongPressed = false;
+        
         btn.addEventListener('touchstart', (e) => {
+            hasLongPressed = false;
             const touch = e.touches[0];
-            playSubHoverSound();
             touchTimer = setTimeout(() => {
+                hasLongPressed = true;
+                playSubHoverSound();
                 showSubHotspotTooltip(spot, touch.clientX, touch.clientY);
             }, 500);
         });
-        btn.addEventListener('touchend', () => {
-            if (touchTimer) clearTimeout(touchTimer);
-            hideSubHotspotTooltip();
-        });
-        btn.addEventListener('touchmove', () => {
-            if (touchTimer) clearTimeout(touchTimer);
+        
+        btn.addEventListener('touchmove', (e) => {
+            if (touchTimer) {
+                clearTimeout(touchTimer);
+                touchTimer = null;
+            }
             hideSubHotspotTooltip();
         });
         
+        btn.addEventListener('touchend', (e) => {
+            if (touchTimer) {
+                clearTimeout(touchTimer);
+                touchTimer = null;
+            }
+            
+            setTimeout(() => {
+                hideSubHotspotTooltip();
+            }, 100);
+            
+            // Если не было долгого нажатия - открываем модель
+            if (!hasLongPressed) {
+                currentIndex = idx;
+                updateModalContent();
+            }
+        });
+        
         btn.onclick = (e) => {
-            e.stopPropagation();
+            e.stopPropagation();``
+            hideSubHotspotTooltip();
             currentIndex = idx;
             updateModalContent();
         };
         
         hotspotsContainer.appendChild(btn);
+        currentHotspotButtons.push(btn);
     });
 }
 
@@ -419,7 +473,9 @@ export function closeModal() {
     document.getElementById("models-list-overlay").classList.remove('active');
     hotspotsContainer.innerHTML = '';
     hideSubHotspotTooltip();
-    isImageModalMode = false; 
+    isImageModalMode = false;
+    currentImageHotspotsData = null;
+    currentHotspotButtons = [];
 
     const prevBtn = document.getElementById("prev-model");
     const nextBtn = document.getElementById("next-model");

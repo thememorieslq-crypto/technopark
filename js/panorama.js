@@ -313,9 +313,17 @@ function _loadRoomInternal(roomId, useCrossfade = false) {
 function onWindowResize() {
     const container = document.getElementById('app');
     if (!container || !camera || !renderer) return;
+    
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
+    
+    if (currentRoomId) {
+        const roomData = ROOMS_INDEX[currentRoomId];
+        if (roomData && roomData.hotspots) {
+            createHotspots(scene, roomData.hotspots, camera, renderer, null);
+        }
+    }
 }
 
 function animate() {

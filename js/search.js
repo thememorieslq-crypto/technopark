@@ -56,9 +56,6 @@ function buildSearchIndex() {
             }
         });
     }
-    
-    console.log(`Оборудование: ${allEquipmentItems.length} элементов`);
-    console.log(`Аудитории: ${allRooms.length} комнат`);
 }
 
 function search(query) {
@@ -292,7 +289,6 @@ function initSearch() {
         }
     });
     
-    console.log('Поиск инициализирован (Ctrl+K)');
 }
 
 window.addEventListener('openSubHotspot', (e) => {

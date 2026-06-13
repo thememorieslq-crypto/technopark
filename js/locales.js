@@ -92,7 +92,6 @@ export function forceUpdateUI() {
 
 export function initLanguage() {
     const saved = localStorage.getItem('language');
-    console.log('Сохранённый язык из localStorage:', saved);
     
     if (saved === 'en') {
         currentLang = 'en';
@@ -101,9 +100,7 @@ export function initLanguage() {
         localStorage.setItem('language', 'ru');
     }
     
-    console.log(`🌐 Язык инициализирован: ${currentLang}`);
     addLanguageButton();
-    // Принудительно обновляем UI после загрузки языка
     forceUpdateUI();
 }
 
