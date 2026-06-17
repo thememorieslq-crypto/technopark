@@ -273,12 +273,9 @@ canvas {
     font-weight: bold;
     transition: all 0.1s ease-in-out;
 }
-#show-all-btn:hover {
-    transform: scale(1.1);
-}
 
 #show-all-btn:active {
-    transform: scale(1);
+    transform: scale(0.9);
 }
 
 /* ========== Второстепенные элементы ========== */
