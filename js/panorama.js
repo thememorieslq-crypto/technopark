@@ -12,23 +12,26 @@ let currentRoomId = null;
 let currentRoomType = 'room';
 let currentMaterial = null;
 
-// Для кроссфейда
 let nextSphereMesh = null;
 let nextMaterial = null;
-let crossfadeProgress = 1; // 1 = полностью видна текущая, 0 = полностью видна следующая
+let crossfadeProgress = 1;
 let isCrossfading = false;
 let crossfadeStartTime = 0;
-const CROSSFADE_DURATION = 600; // миллисекунд
+const CROSSFADE_DURATION = 600;
 
 const textureCache = {};
 let fadeOverlay;
 let isLoading = false;
 let fadeTimer = null;
 
+let minFov = 30;
+let maxFov = 120;
+let currentFov = 75; 
+
 export function initPanorama(container) {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(
-        75,
+        currentFov, // используем currentFov
         container.clientWidth / container.clientHeight,
         1,
         1100
@@ -42,7 +45,7 @@ export function initPanorama(container) {
     container.appendChild(renderer.domElement);
 
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = false;
+    controls.enableZoom = false; 
     controls.enablePan = false;
     controls.rotateSpeed = -0.4;
 
@@ -52,6 +55,42 @@ export function initPanorama(container) {
     controls.addEventListener('end', () => {
         document.body.classList.remove('is-dragging');
     });
+
+    renderer.domElement.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 1 : -1;
+        currentFov += delta * 2; 
+        currentFov = Math.min(maxFov, Math.max(minFov, currentFov));
+        camera.fov = currentFov;
+        camera.updateProjectionMatrix();
+    }, { passive: false });
+
+    let initialPinchDist = 0;
+    let initialFov = currentFov;
+
+    renderer.domElement.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            initialPinchDist = Math.sqrt(dx*dx + dy*dy);
+            initialFov = currentFov;
+        }
+    }, { passive: true });
+
+    renderer.domElement.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const scale = dist / initialPinchDist;
+            const sensitivity = 0.5;
+            const newFov = initialFov - (scale - 1) * 30;
+            currentFov = Math.min(maxFov, Math.max(minFov, newFov));
+            camera.fov = currentFov;
+            camera.updateProjectionMatrix();
+        }
+    }, { passive: false });
 
     const geometry = new THREE.SphereGeometry(500, 64, 64);
     geometry.scale(-1, 1, 1);
@@ -76,7 +115,6 @@ export function initPanorama(container) {
 function startCrossfade(newTexture) {
     if (!nextSphereMesh) return;
     
-    // Создаём материал для новой сферы
     if (nextMaterial) {
         nextMaterial.dispose();
     }
@@ -100,10 +138,8 @@ function updateCrossfade() {
     const elapsed = now - crossfadeStartTime;
     
     if (elapsed >= CROSSFADE_DURATION) {
-        // Кроссфейд завершён
         isCrossfading = false;
         
-        // Переключаем материалы
         if (currentMaterial) {
             currentMaterial.dispose();
         }
@@ -118,10 +154,8 @@ function updateCrossfade() {
         return;
     }
     
-    // Вычисляем прогресс (0 → 1)
     crossfadeProgress = 1 - (elapsed / CROSSFADE_DURATION);
     
-    // Плавно меняем прозрачность
     if (nextMaterial) {
         nextMaterial.opacity = 1 - crossfadeProgress;
     }
@@ -160,9 +194,7 @@ export function loadRoom(roomId) {
     isLoading = true;
     if (fadeTimer) clearTimeout(fadeTimer);
 
-    // Используем кроссфейд вместо fadeOut
     if (currentMaterial && currentMaterial.map && textureCache[roomId]) {
-        // Если панорама уже в кэше - сразу запускаем кроссфейд
         startCrossfade(textureCache[roomId]);
         _loadRoomInternal(roomId, true);
     } else {
@@ -198,7 +230,6 @@ function _loadRoomInternal(roomId, useCrossfade = false) {
     const loaderEl = document.getElementById('panorama-loader');
     if (loaderEl && !useCrossfade) loaderEl.classList.remove('hidden');
 
-    // Проверка на "В РАЗРАБОТКЕ" (без изменений)
     if (roomData.underConstruction === true) {
         const lang = getCurrentLang();
         const canvas = document.createElement('canvas');
@@ -251,7 +282,6 @@ function _loadRoomInternal(roomId, useCrossfade = false) {
         texture.generateMipmaps = false;
 
         if (useCrossfade && currentMaterial) {
-            // Запускаем кроссфейд
             startCrossfade(texture);
         } else {
             if (currentMaterial) currentMaterial.dispose();
